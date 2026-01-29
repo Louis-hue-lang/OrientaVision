@@ -1,0 +1,240 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-xl);
+}
+
+.subtitle {
+    color: var(--color-text-secondary);
+}
+
+.addButton {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    background-color: var(--color-primary);
+    color: white;
+    border-radius: var(--radius-full);
+    padding: 0.8rem 1.5rem;
+}
+
+.addButton:hover {
+    background-color: var(--color-primary-hover);
+}
+
+.schoolsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-lg);
+}
+
+.schoolCard {
+    background: var(--color-bg-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-md);
+    transition: transform var(--transition-normal);
+}
+
+.schoolCard:hover {
+    transform: translateY(-4px);
+    background-color: var(--color-bg-surface-hover);
+}
+
+.schoolHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-md);
+}
+
+.schoolHeader h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.schoolActions {
+    display: flex;
+    gap: var(--space-xs);
+}
+
+.schoolActions button {
+    padding: var(--space-xs);
+    background: transparent;
+    color: var(--color-text-muted);
+}
+
+.schoolActions button:hover {
+    color: var(--color-text-primary);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.deleteButton:hover {
+    color: var(--color-accent) !important;
+    background-color: rgba(244, 63, 94, 0.1) !important;
+}
+
+.miniStats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.statRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+}
+
+.statLabel {
+    width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.statBar {
+    flex: 1;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.statBar div {
+    height: 100%;
+    border-radius: var(--radius-full);
+}
+
+.moreStats {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    text-align: right;
+    margin-top: var(--space-xs);
+}
+
+.emptyState {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: var(--space-xl);
+    color: var(--color-text-muted);
+    border: 2px dashed rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+}
+
+/* Form Styles */
+.formCard {
+    max-width: 800px;
+    margin: 0 auto;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.formHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-lg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: var(--space-md);
+}
+
+.closeButton {
+    background: transparent;
+    padding: var(--space-xs);
+}
+
+.formGroup {
+    margin-bottom: var(--space-lg);
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: var(--space-sm);
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+.input {
+    width: 100%;
+    padding: var(--space-md);
+    background-color: var(--color-bg-main);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: white;
+    font-size: 1rem;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.colorGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.colorSwatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    padding: 0;
+    border: 2px solid transparent;
+    cursor: pointer;
+}
+
+.activeSwatch {
+    border-color: white;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.subTitle {
+    margin-bottom: var(--space-md);
+    font-size: 1.1rem;
+    color: var(--color-primary);
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-md);
+    margin-top: var(--space-xl);
+    padding-top: var(--space-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.saveButton {
+    background-color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.cancelButton {
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.saveButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

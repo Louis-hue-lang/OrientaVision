@@ -1,0 +1,111 @@
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    /* Login page takes full height, sidebar might be hidden or this is a separate layout */
+    width: 100%;
+    padding: var(--space-md);
+}
+
+.card {
+    background: var(--color-bg-surface);
+    padding: var(--space-xl);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 400px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.title {
+    text-align: center;
+    margin-bottom: var(--space-lg);
+    color: var(--color-primary);
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.inputGroup label {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+}
+
+.input {
+    padding: var(--space-md);
+    background-color: var(--color-bg-main);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: white;
+    font-size: 1rem;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.submitButton {
+    background-color: var(--color-primary);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+}
+
+.submitButton:hover {
+    background-color: var(--color-primary-hover);
+}
+
+.switchText {
+    margin-top: var(--space-lg);
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+}
+
+.switchButton {
+    background: transparent;
+    color: var(--color-primary);
+    padding: 0 var(--space-xs);
+    font-weight: 600;
+}
+
+.switchButton:hover {
+    text-decoration: underline;
+    background: transparent;
+}
+
+.alert {
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+    font-size: 0.9rem;
+}
+
+.error {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.success {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}

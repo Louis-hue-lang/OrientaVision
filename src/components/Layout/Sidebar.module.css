@@ -1,0 +1,85 @@
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background-color: var(--color-bg-surface);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-lg);
+    flex-shrink: 0;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+    color: var(--color-primary);
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.logoIcon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 800;
+    box-shadow: var(--shadow-glow);
+}
+
+.navList {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.navLink {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: all var(--transition-normal);
+}
+
+.navLink:hover {
+    background-color: var(--color-bg-surface-hover);
+    color: var(--color-text-primary);
+}
+
+.active {
+    background-color: rgba(139, 92, 246, 0.1);
+    /* Primary with opacity */
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.active svg {
+    stroke: var(--color-primary);
+}
+.footer {
+    margin-top: auto;
+    padding-top: var(--space-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.logoutButton {
+    width: 100%;
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-text-muted);
+}
+
+.logoutButton:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+}

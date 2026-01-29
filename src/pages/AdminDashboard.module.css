@@ -1,0 +1,145 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-xl);
+}
+
+.titleGroup {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.icon {
+    color: var(--color-primary);
+}
+
+.inviteButton {
+    background-color: var(--color-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.inviteCard {
+    margin-bottom: var(--space-lg);
+    border-left: 4px solid var(--color-secondary);
+}
+
+.linkBox {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    background-color: var(--color-bg-main);
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
+    margin: var(--space-sm) 0;
+}
+
+.linkBox code {
+    flex: 1;
+    font-family: monospace;
+    overflow-x: auto;
+}
+
+.linkBox button {
+    padding: var(--space-xs);
+    background: transparent;
+    color: var(--color-text-secondary);
+}
+
+.linkBox button:hover {
+    color: var(--color-text-primary);
+}
+
+.note {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+}
+
+.tableCard {
+    padding: 0;
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: var(--space-md) var(--space-lg);
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.table th {
+    background-color: rgba(255, 255, 255, 0.02);
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-full);
+    background-color: var(--color-bg-surface-hover);
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.adminBadge {
+    background-color: rgba(139, 92, 246, 0.1);
+    color: var(--color-primary);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.deleteButton {
+    background: transparent;
+    color: var(--color-text-muted);
+    padding: var(--space-xs);
+}
+
+.deleteButton:hover {
+    color: var(--color-accent);
+    background-color: rgba(244, 63, 94, 0.1);
+}
+
+.successMessage {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-md);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.errorMessage {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-md);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.roleSelect {
+    background-color: var(--color-bg-surface-hover);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.roleSelect:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}

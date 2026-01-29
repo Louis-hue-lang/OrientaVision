@@ -1,0 +1,148 @@
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+    max-width: 800px;
+}
+
+.manageCard {
+    border-left: 4px solid var(--color-primary);
+}
+
+.cardHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+
+.cardHeader h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.icon {
+    color: var(--color-primary);
+}
+
+.description {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-lg);
+    line-height: 1.6;
+}
+
+.criteriaList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xl);
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: var(--space-xs);
+}
+
+.criterionItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--color-bg-main);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.adjuster {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.colorDot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.label {
+    font-weight: 500;
+}
+
+.deleteButton {
+    background: transparent;
+    color: var(--color-text-muted);
+    padding: var(--space-xs);
+}
+
+.deleteButton:hover {
+    color: var(--color-accent);
+    background-color: rgba(244, 63, 94, 0.1);
+}
+
+.addForm {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+    background-color: var(--color-bg-main);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+}
+
+.inputGroup {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    background-color: var(--color-bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    padding: 0 var(--space-sm);
+}
+
+.input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: white;
+    padding: var(--space-md) 0;
+}
+
+.input:focus {
+    outline: none;
+}
+
+.colorInput {
+    background: transparent;
+    border: none;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.addButton {
+    background-color: var(--color-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    white-space: nowrap;
+}
+
+.dangerZone {
+    border-left: 4px solid var(--color-accent);
+}
+
+.dangerIcon {
+    color: var(--color-accent);
+}
+
+.resetButton {
+    background-color: transparent;
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    width: 100%;
+}
+
+.resetButton:hover {
+    background-color: var(--color-accent);
+    color: white;
+}

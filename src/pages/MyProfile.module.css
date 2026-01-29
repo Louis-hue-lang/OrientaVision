@@ -1,0 +1,73 @@
+.header {
+    margin-bottom: var(--space-xl);
+}
+
+.subtitle {
+    color: var(--color-text-secondary);
+    font-size: 1.1rem;
+    max-width: 600px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+}
+
+@media (min-width: 900px) {
+    .grid {
+        grid-template-columns: 3fr 2fr;
+    }
+}
+
+.sectionTitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: var(--space-lg);
+    color: var(--color-text-primary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: var(--space-sm);
+}
+
+.instructionTitle {
+    font-size: 1.25rem;
+    margin-bottom: var(--space-md);
+    color: var(--color-primary);
+}
+
+.instructionList {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.instructionList li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+}
+
+.bullet {
+    background-color: var(--color-bg-surface-hover);
+    color: var(--color-primary);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.tips {
+    margin-top: var(--space-lg);
+    padding: var(--space-md);
+    background-color: rgba(6, 182, 212, 0.1);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    color: var(--color-secondary);
+    font-size: 0.9rem;
+}
