@@ -170,13 +170,15 @@ app.put('/api/admin/users/:username/role', authenticateToken, requireAdmin, (req
 // and registration checks for a code if we implemented that constraint. 
 // For now, let's just make an endpoint that returns a "invite link" structure
 // Generate a secure random code
-const code = Math.random().toString(36).substring(7);
-invites.push({
-    code,
-    createdAt: new Date().toISOString()
-});
-saveInvites();
-res.json({ code }); // Frontend handles link construction
+app.post('/api/admin/invite', authenticateToken, requireAdmin, (req, res) => {
+    // Generate a secure random code
+    const code = Math.random().toString(36).substring(7);
+    invites.push({
+        code,
+        createdAt: new Date().toISOString()
+    });
+    saveInvites();
+    res.json({ code }); // Frontend handles link construction
 });
 
 app.get('/api/admin/invites', authenticateToken, requireAdmin, (req, res) => {
