@@ -4,7 +4,10 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_FILE = path.join(__dirname, 'users.json');
+
+// Allow configurable storage path (useful for Docker volumes)
+const STORAGE_PATH = process.env.STORAGE_PATH || __dirname;
+const DATA_FILE = path.join(STORAGE_PATH, 'users.json');
 
 // Ensure data file exists or start empty
 let initialUsers = {};
@@ -34,7 +37,7 @@ export const saveUsers = () => {
     }
 };
 
-const SHARED_DATA_FILE = path.join(__dirname, 'shared.json');
+const SHARED_DATA_FILE = path.join(STORAGE_PATH, 'shared.json');
 let initialSharedData = { schools: [], criteria: [] };
 try {
     if (fs.existsSync(SHARED_DATA_FILE)) {

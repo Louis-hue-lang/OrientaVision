@@ -16,7 +16,7 @@ const AdminDashboard = () => {
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch('http://localhost:3001/api/admin/users', {
+            const res = await fetch('/api/admin/users', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -33,10 +33,12 @@ const AdminDashboard = () => {
         if (!confirm(`Supprimer l'utilisateur ${username} ?`)) return;
 
         try {
-            const res = await fetch(`http://localhost:3001/api/admin/users/${username}`, {
+            const res = await fetch(`/api/admin/users/${username}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            // ... (skipping unchanged lines in thought, but tool needs exact context or full block. I will use ReplaceFileContent with larger block if needed or multiple calls.
+            // Since AdminDashboard has multiple fetches, I will use MultiReplaceFileContent for AdminDashboard to be cleaner.)
             if (res.ok) {
                 setUsers(users.filter(u => u.username !== username));
                 setMessage(`Utilisateur ${username} supprimé`);
@@ -51,7 +53,7 @@ const AdminDashboard = () => {
 
     const handleRoleChange = async (username, newRole) => {
         try {
-            const res = await fetch(`http://localhost:3001/api/admin/users/${username}/role`, {
+            const res = await fetch(`/api/admin/users/${username}/role`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -73,12 +75,14 @@ const AdminDashboard = () => {
 
     const handleInvite = async () => {
         try {
-            const res = await fetch('http://localhost:3001/api/admin/invite', {
+            const res = await fetch('/api/admin/invite', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
-            setInviteLink(data.link);
+            // Construct full link client-side to ensure correct domain
+            const fullLink = `${window.location.origin}/login?invite=${data.code}`;
+            setInviteLink(fullLink);
             setMessage('Lien d\'invitation généré');
         } catch (e) {
             setError('Erreur lors de la génération de l\'invitation');

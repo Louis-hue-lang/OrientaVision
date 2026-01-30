@@ -48,7 +48,7 @@ export const AppProvider = ({ children }) => {
     const fetchData = async () => {
       if (!token) return;
       try {
-        const res = await fetch('http://localhost:3001/api/data', {
+        const res = await fetch('/api/data', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -71,7 +71,7 @@ export const AppProvider = ({ children }) => {
   const saveDataToServer = async (newData) => {
     if (!token || !isDataLoaded.current) return;
     try {
-      await fetch('http://localhost:3001/api/data', {
+      await fetch('/api/data', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

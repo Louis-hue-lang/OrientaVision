@@ -170,7 +170,7 @@ app.post('/api/admin/invite', authenticateToken, requireAdmin, (req, res) => {
     // Generate a random code
     const code = Math.random().toString(36).substring(7);
     inviteCodes.add(code);
-    res.json({ code, link: `http://localhost:5173/login?invite=${code}` });
+    res.json({ code }); // Frontend handles link construction
 });
 
 // Data Routes
