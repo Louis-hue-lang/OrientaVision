@@ -25,8 +25,29 @@ try {
 // Export mutable users object initialized from file
 export const users = initialUsers;
 
-// Export invitation codes (in-memory only for now as they are ephemeral)
-export const inviteCodes = new Set();
+// function to save invites
+const INVITES_FILE = path.join(STORAGE_PATH, 'invites.json');
+let initialInvites = [];
+try {
+    if (fs.existsSync(INVITES_FILE)) {
+        const fileContent = fs.readFileSync(INVITES_FILE, 'utf8');
+        if (fileContent.trim()) {
+            initialInvites = JSON.parse(fileContent);
+        }
+    }
+} catch (error) {
+    console.error('Error loading invites.json:', error);
+}
+
+export const invites = initialInvites;
+
+export const saveInvites = () => {
+    try {
+        fs.writeFileSync(INVITES_FILE, JSON.stringify(invites, null, 2));
+    } catch (error) {
+        console.error('Error saving invites.json:', error);
+    }
+};
 
 // Function to save users to disk
 export const saveUsers = () => {

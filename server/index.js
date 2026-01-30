@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { users, inviteCodes, saveUsers, sharedData, saveSharedData } from './store.js';
+import { users, invites, saveUsers, saveInvites, sharedData, saveSharedData } from './store.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,18 +60,20 @@ app.post('/api/auth/register', async (req, res) => {
     const isFirstUser = Object.keys(users).length === 0;
 
     if (!isFirstUser) {
-        if (!req.body.inviteCode || !inviteCodes.has(req.body.inviteCode)) {
+        const inviteIndex = invites.findIndex(inv => inv.code === req.body.inviteCode);
+        if (inviteIndex === -1) {
             return res.status(403).json({ message: 'Invalid or missing invite code' });
         }
-        // Consume code (optional, but good practice for security)
-        // Let's consume it to match typical "invite link" behavior
-        inviteCodes.delete(req.body.inviteCode);
+        // Consume code
+        invites.splice(inviteIndex, 1);
+        saveInvites();
     }
 
     // Initialize with empty data
     users[username] = {
         passwordHash: hashedPassword,
         role: isFirstUser ? 'admin' : 'joueur',
+        usedInviteCode: isFirstUser ? 'First Admin' : req.body.inviteCode,
         data: {
             profile: null,
             schools: [],
@@ -100,7 +102,8 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, (req, res) => {
     // Return list of users sans passwords
     const userList = Object.keys(users).map(username => ({
         username,
-        role: users[username].role
+        role: users[username].role,
+        usedInviteCode: users[username].usedInviteCode || 'N/A'
     }));
     res.json(userList);
 });
@@ -166,11 +169,39 @@ app.put('/api/admin/users/:username/role', authenticateToken, requireAdmin, (req
 // here we can just sign a special JWT or just assume "Link copied" means we are done 
 // and registration checks for a code if we implemented that constraint. 
 // For now, let's just make an endpoint that returns a "invite link" structure
-app.post('/api/admin/invite', authenticateToken, requireAdmin, (req, res) => {
-    // Generate a random code
-    const code = Math.random().toString(36).substring(7);
-    inviteCodes.add(code);
-    res.json({ code }); // Frontend handles link construction
+// Generate a secure random code
+const code = Math.random().toString(36).substring(7);
+invites.push({
+    code,
+    createdAt: new Date().toISOString()
+});
+saveInvites();
+res.json({ code }); // Frontend handles link construction
+});
+
+app.get('/api/admin/invites', authenticateToken, requireAdmin, (req, res) => {
+    res.json(invites);
+});
+
+app.delete('/api/admin/invites/:code', authenticateToken, requireAdmin, (req, res) => {
+    const { code } = req.params;
+    const initialLength = invites.length;
+
+    // Filter out the code
+    const newInvites = invites.filter(inv => inv.code !== code);
+
+    if (newInvites.length === initialLength) {
+        return res.status(404).json({ message: 'Invite not found' });
+    }
+
+    // Update the array in place (since we imported a mutable reference? verify store.js)
+    // store.js exports `invites` which is `let initialInvites` assigned. Wait, `export const invites = initialInvites` exports a reference to the array. 
+    // Mutating the array `invites` works (push/splice). assigning a new array to `newInvites` logic requires clearing and pushing back or splicing.
+    invites.length = 0;
+    invites.push(...newInvites);
+
+    saveInvites();
+    res.json({ message: 'Invite deleted' });
 });
 
 // Data Routes
