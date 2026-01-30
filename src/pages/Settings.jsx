@@ -88,28 +88,7 @@ const Settings = () => {
                     </form>
                 </div>
 
-                <div className={`card ${styles.dangerZone}`}>
-                    <div className={styles.cardHeader}>
-                        <AlertTriangle className={styles.dangerIcon} />
-                        <h2>Zone de danger</h2>
-                    </div>
-                    <p className={styles.description}>
-                        Vos données sont synchronisées avec le serveur.
-                        Ce bouton permet de nettoyer le cache local de votre navigateur en cas de problème d'affichage.
-                        Cela vous déconnectera.
-                    </p>
-                    <button
-                        className={styles.resetButton}
-                        onClick={() => {
-                            if (confirm('Voulez-vous vider le cache local et vous déconnecter ?')) {
-                                localStorage.clear();
-                                window.location.reload();
-                            }
-                        }}
-                    >
-                        Vider le cache et se déconnecter
-                    </button>
-                </div>
+                {/* Danger zone removed for production - clearing localStorage is not a user feature anymore */}
             </div>
         </div>
     );
