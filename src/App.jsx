@@ -13,7 +13,12 @@ import './App.css';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
-  const { token } = useAuth();
+  const { token, loading } = useAuth();
+
+  if (loading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Chargement...</div>;
+  }
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }

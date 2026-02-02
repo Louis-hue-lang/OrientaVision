@@ -6,15 +6,47 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem('ov_token'));
 
+    const [loading, setLoading] = useState(true);
+
     useEffect(() => {
-        if (token) {
-            // Decode user from token or just trust it for now and verify on requests
-            // Ideally we would have a /me endpoint but simplicity is key
-            const username = localStorage.getItem('ov_username');
-            const role = localStorage.getItem('ov_role');
-            setUser({ username, role });
-        }
-    }, [token]);
+        const initAuth = async () => {
+            // Check if we can refresh the session
+            const success = await checkSession();
+            if (!success) {
+                // If we couldn't refresh, and we supposedly had a token, it might be stale.
+                // However, strictly adhering to "if refresh fails -> logout" ensures security.
+                // But we should verify if we simply have no token to begin with.
+                if (localStorage.getItem('ov_token')) {
+                    // We had a token but refresh failed -> invalid session
+                    doLogout(false); // clear state without reload
+                }
+            }
+            setLoading(false);
+        };
+        initAuth();
+    }, []);
+
+    useEffect(() => {
+        if (loading) return; // Don't start interval if loading
+
+        // Silent refresh every 14 minutes (token lasts 15m)
+        const interval = setInterval(() => {
+            if (user) {
+                checkSession();
+            }
+        }, 14 * 60 * 1000);
+
+        return () => clearInterval(interval);
+    }, [user, loading]);
+
+    const doLogout = (reload = true) => {
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('ov_token');
+        localStorage.removeItem('ov_username');
+        localStorage.removeItem('ov_role');
+        if (reload) window.location.reload();
+    }
 
     const checkSession = async () => {
         try {
@@ -34,20 +66,6 @@ export const AuthProvider = ({ children }) => {
         }
         return false;
     };
-
-    useEffect(() => {
-        // Initial check: if no token or even if token exists, verify/refresh with cookie
-        checkSession();
-
-        // Silent refresh every 14 minutes (token lasts 15m)
-        const interval = setInterval(() => {
-            if (user) {
-                checkSession();
-            }
-        }, 14 * 60 * 1000);
-
-        return () => clearInterval(interval);
-    }, [user, token]); // Add dependencies carefully, or just [] and manage internal state
 
     const login = async (username, password) => {
         try {
@@ -98,16 +116,11 @@ export const AuthProvider = ({ children }) => {
         } catch (e) {
             console.error('Logout error', e);
         }
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('ov_token');
-        localStorage.removeItem('ov_username');
-        localStorage.removeItem('ov_role');
-        window.location.reload();
+        doLogout(true);
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, register, logout }}>
+        <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
             {children}
         </AuthContext.Provider>
     );
