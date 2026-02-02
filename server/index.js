@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'supersecretkey_dev';
 const REFRESH_SECRET_KEY = process.env.REFRESH_SECRET_KEY || 'superrefreshsecretkey_dev';
 
-app.set('trust proxy', 1); // Trust first proxy (Coolify/Nginx)
+app.set('trust proxy', true); // Trust all proxies for now to debug
 app.use(helmet());
 app.use(cors({
     origin: true, // Allow all origins for dev, or specify frontend URL
@@ -29,21 +29,32 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Debug Middleware to see what IP is detected
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] Request from IP: ${req.ip} | X-Forwarded-For: ${req.headers['x-forwarded-for']}`);
+    next();
+});
+
 // Initialize Database
 initializeDatabase();
 
-// Rate Limiting
-const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: { message: 'Too many requests from this IP, please try again after 15 minutes' }
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100, // Limit each IP to 100 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many requests from this IP, please try again after 15 minutes" }
 });
-app.use('/api', apiLimiter);
+
+app.use('/api', limiter);
 
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20, // Increased slightly for dev convenience, strictly 5 is tough when testing
-    message: { message: 'Too many login attempts, please try again after 15 minutes' }
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 20, // Increased limit for debugging
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many login attempts, please try again after 15 minutes" }
 });
 app.use('/api/auth', authLimiter);
 
