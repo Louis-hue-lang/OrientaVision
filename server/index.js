@@ -5,6 +5,9 @@ import bcrypt from 'bcryptjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { users, invites, saveUsers, saveInvites, sharedData, saveSharedData } from './store.js';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { registerSchema, loginSchema, roleUpdateSchema } from './validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,8 +16,24 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'supersecretkey_dev'; // In prod, use env var
 
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
+
+// Rate Limiting
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use('/api', apiLimiter);
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // limit each IP to 5 login/register requests per windowMs
+    message: 'Too many login attempts, please try again after 15 minutes'
+});
+app.use('/api/auth', authLimiter);
 
 // Middleware to authenticate token
 const authenticateToken = (req, res, next) => {
@@ -45,10 +64,14 @@ const requireAdmin = (req, res, next) => {
 
 // Auth Routes
 app.post('/api/auth/register', async (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password required' });
+    // Validate input using Zod
+    const validation = registerSchema.safeParse(req.body);
+    if (!validation.success) {
+        return res.status(400).json({ message: validation.error.issues[0].message });
     }
+
+    const { username, password } = validation.data;
+
 
     if (users[username]) {
         return res.status(409).json({ message: 'User already exists' });
@@ -86,7 +109,13 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 app.post('/api/auth/login', async (req, res) => {
-    const { username, password } = req.body;
+    // Validate input
+    const validation = loginSchema.safeParse(req.body);
+    if (!validation.success) {
+        return res.status(400).json({ message: validation.error.issues[0].message });
+    }
+
+    const { username, password } = validation.data;
     const user = users[username];
 
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
