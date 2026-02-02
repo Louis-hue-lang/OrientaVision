@@ -16,6 +16,39 @@ export const AuthProvider = ({ children }) => {
         }
     }, [token]);
 
+    const checkSession = async () => {
+        try {
+            // Try to refresh token using cookie
+            const response = await fetch('/api/auth/refresh', { method: 'POST' });
+            if (response.ok) {
+                const data = await response.json();
+                setToken(data.token);
+                setUser({ username: data.username, role: data.role });
+                localStorage.setItem('ov_token', data.token);
+                localStorage.setItem('ov_username', data.username);
+                localStorage.setItem('ov_role', data.role);
+                return true;
+            }
+        } catch (e) {
+            // No session or valid cookie
+        }
+        return false;
+    };
+
+    useEffect(() => {
+        // Initial check: if no token or even if token exists, verify/refresh with cookie
+        checkSession();
+
+        // Silent refresh every 14 minutes (token lasts 15m)
+        const interval = setInterval(() => {
+            if (user) {
+                checkSession();
+            }
+        }, 14 * 60 * 1000);
+
+        return () => clearInterval(interval);
+    }, [user, token]); // Add dependencies carefully, or just [] and manage internal state
+
     const login = async (username, password) => {
         try {
             const response = await fetch('/api/auth/login', {
@@ -59,18 +92,17 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
+    const logout = async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+        } catch (e) {
+            console.error('Logout error', e);
+        }
         setUser(null);
         setToken(null);
         localStorage.removeItem('ov_token');
         localStorage.removeItem('ov_username');
         localStorage.removeItem('ov_role');
-        // We should probably also clear application data from local storage
-        // or keep it if we want "guest" data to persist until overwrite?
-        // Let's clear to be safe/clean
-        localStorage.removeItem('ov_profile');
-        localStorage.removeItem('ov_schools');
-        localStorage.removeItem('ov_criteria');
         window.location.reload();
     };
 

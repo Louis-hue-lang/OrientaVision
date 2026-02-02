@@ -4,9 +4,10 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { users, invites, saveUsers, saveInvites, sharedData, saveSharedData } from './store.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
+import { getDb, initializeDatabase } from './database.js';
 import { registerSchema, loginSchema, roleUpdateSchema } from './validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,23 +15,31 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const SECRET_KEY = process.env.SECRET_KEY || 'supersecretkey_dev'; // In prod, use env var
+const SECRET_KEY = process.env.SECRET_KEY || 'supersecretkey_dev';
+const REFRESH_SECRET_KEY = process.env.REFRESH_SECRET_KEY || 'superrefreshsecretkey_dev';
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+    origin: true, // Allow all origins for dev, or specify frontend URL
+    credentials: true // Important for cookies
+}));
 app.use(express.json());
+app.use(cookieParser());
+
+// Initialize Database
+initializeDatabase();
 
 // Rate Limiting
 const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 100,
     message: { message: 'Too many requests from this IP, please try again after 15 minutes' }
 });
 app.use('/api', apiLimiter);
 
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // limit each IP to 5 login/register requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 20, // Increased slightly for dev convenience, strictly 5 is tough when testing
     message: { message: 'Too many login attempts, please try again after 15 minutes' }
 });
 app.use('/api/auth', authLimiter);
@@ -49,13 +58,12 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-const requireAdmin = (req, res, next) => {
-    // Check if user object exists from authenticateToken
-    // And check role. 
-    // Note: We encoded role in token, but we should probably verify against store for critical actions
-    // For simplicity, rely on token or check store:
-    const user = users[req.user.username];
+const requireAdmin = async (req, res, next) => {
+    const db = await getDb();
+    const user = await db.get('SELECT role FROM users WHERE username = ?', req.user.username);
+
     if (user && (user.role === 'admin' || user.role === 'moderator')) {
+        req.userRole = user.role; // store for later use
         next();
     } else {
         res.status(403).json({ message: 'Admin access required' });
@@ -63,230 +71,273 @@ const requireAdmin = (req, res, next) => {
 };
 
 // Auth Routes
+
+// Helper to generate tokens
+const generateTokens = (user) => {
+    const accessToken = jwt.sign({ username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '15m' });
+    const refreshToken = jwt.sign({ username: user.username }, REFRESH_SECRET_KEY, { expiresIn: '7d' });
+    return { accessToken, refreshToken };
+};
+
 app.post('/api/auth/register', async (req, res) => {
-    // Validate input using Zod
     const validation = registerSchema.safeParse(req.body);
     if (!validation.success) {
         return res.status(400).json({ message: validation.error.issues[0].message });
     }
 
-    const { username, password } = validation.data;
+    const { username, password, inviteCode } = validation.data;
+    const db = await getDb();
 
-
-    if (users[username]) {
+    // Check existing user
+    const existingUser = await db.get('SELECT username FROM users WHERE username = ?', username);
+    if (existingUser) {
         return res.status(409).json({ message: 'User already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const userCount = (await db.get('SELECT count(*) as count FROM users')).count;
+    const isFirstUser = userCount === 0;
 
-    // Check if this is the first user
-    const isFirstUser = Object.keys(users).length === 0;
+    let usedCode = isFirstUser ? 'First Admin' : inviteCode;
 
     if (!isFirstUser) {
-        const inviteIndex = invites.findIndex(inv => inv.code === req.body.inviteCode);
-        if (inviteIndex === -1) {
+        const invite = await db.get('SELECT * FROM invites WHERE code = ?', inviteCode);
+        if (!invite) {
             return res.status(403).json({ message: 'Invalid or missing invite code' });
         }
-        // Consume code
-        invites.splice(inviteIndex, 1);
-        saveInvites();
+        await db.run('DELETE FROM invites WHERE code = ?', inviteCode);
     }
 
-    // Initialize with empty data
-    users[username] = {
-        passwordHash: hashedPassword,
-        role: isFirstUser ? 'admin' : 'joueur',
-        usedInviteCode: isFirstUser ? 'First Admin' : req.body.inviteCode,
-        data: {
-            profile: null,
-            schools: [],
-            criteria: [] // Will fallback to defaults on frontend if empty
-        }
-    };
-    saveUsers();
+    const role = isFirstUser ? 'admin' : 'joueur';
+    const initialData = JSON.stringify({
+        profile: null,
+        schools: [],
+        criteria: []
+    });
+
+    await db.run(
+        'INSERT INTO users (username, password_hash, role, data_json, used_invite_code) VALUES (?, ?, ?, ?, ?)',
+        username, hashedPassword, role, initialData, usedCode
+    );
 
     res.status(201).json({ message: 'User created' });
 });
 
 app.post('/api/auth/login', async (req, res) => {
-    // Validate input
     const validation = loginSchema.safeParse(req.body);
     if (!validation.success) {
         return res.status(400).json({ message: validation.error.issues[0].message });
     }
 
     const { username, password } = validation.data;
-    const user = users[username];
+    const db = await getDb();
+    const user = await db.get('SELECT * FROM users WHERE username = ?', username);
 
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
         return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ username, role: user.role }, SECRET_KEY, { expiresIn: '1h' });
-    res.json({ token, username, role: user.role });
+    const { accessToken, refreshToken } = generateTokens(user);
+
+    // Store refresh token (hashed preferably, but for now plain is "okay" if DB is secure, let's store plain for simplicity of rotation check or hashed is best practice but requires migration complexity if we want to revoke. Storing plain allows easy revocation physically. Let's store plain for this iteration)
+    // Actually, secure cookie is the main protection. Storing in DB allows revocation.
+    await db.run('UPDATE users SET refresh_token = ? WHERE username = ?', refreshToken, username);
+
+    // Send HTTP-Only Cookie
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // true in https
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    res.json({ token: accessToken, username, role: user.role });
+});
+
+app.post('/api/auth/refresh', async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) return res.sendStatus(401);
+
+    const db = await getDb();
+    const user = await db.get('SELECT * FROM users WHERE refresh_token = ?', refreshToken);
+
+    if (!user) return res.sendStatus(403);
+
+    jwt.verify(refreshToken, REFRESH_SECRET_KEY, (err, decoded) => {
+        if (err || user.username !== decoded.username) return res.sendStatus(403);
+
+        const { accessToken, refreshToken: newRefreshToken } = generateTokens(user);
+
+        // Rotate Refresh Token
+        db.run('UPDATE users SET refresh_token = ? WHERE username = ?', newRefreshToken, user.username);
+
+        res.cookie('refreshToken', newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        res.json({ token: accessToken, username: user.username, role: user.role });
+    });
+});
+
+app.post('/api/auth/logout', async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+    if (refreshToken) {
+        const db = await getDb();
+        await db.run('UPDATE users SET refresh_token = NULL WHERE refresh_token = ?', refreshToken);
+    }
+    res.clearCookie('refreshToken');
+    res.sendStatus(204);
 });
 
 // Admin Routes
-app.get('/api/admin/users', authenticateToken, requireAdmin, (req, res) => {
-    // Return list of users sans passwords
-    const userList = Object.keys(users).map(username => ({
-        username,
-        role: users[username].role,
-        usedInviteCode: users[username].usedInviteCode || 'N/A'
-    }));
-    res.json(userList);
+app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+    const db = await getDb();
+    const users = await db.all('SELECT username, role, used_invite_code as usedInviteCode FROM users');
+    res.json(users);
 });
 
-app.delete('/api/admin/users/:username', authenticateToken, requireAdmin, (req, res) => {
+app.delete('/api/admin/users/:username', authenticateToken, requireAdmin, async (req, res) => {
     const targetUser = req.params.username;
-    if (!users[targetUser]) {
-        return res.status(404).json({ message: 'User not found' });
-    }
-    // Prevent deleting self
     if (targetUser === req.user.username) {
         return res.status(400).json({ message: 'Cannot delete yourself' });
     }
 
-    // Prevent Moderator from deleting Admin OR other Moderators
-    const requester = users[req.user.username];
-    const target = users[targetUser];
+    const db = await getDb();
+
+    // Check roles
+    const requester = await db.get('SELECT role FROM users WHERE username = ?', req.user.username);
+    const target = await db.get('SELECT role FROM users WHERE username = ?', targetUser);
+
+    if (!target) return res.status(404).json({ message: 'User not found' });
+
+    // Moderator logic
     if (requester.role === 'moderator' && (target.role === 'admin' || target.role === 'moderator')) {
         return res.status(403).json({ message: 'Moderators cannot delete Admins or other Moderators' });
     }
 
-    delete users[targetUser];
-    saveUsers();
+    await db.run('DELETE FROM users WHERE username = ?', targetUser);
     res.json({ message: 'User deleted' });
 });
 
-app.put('/api/admin/users/:username/role', authenticateToken, requireAdmin, (req, res) => {
+app.put('/api/admin/users/:username/role', authenticateToken, requireAdmin, async (req, res) => {
     const targetUser = req.params.username;
     const { role } = req.body;
 
-    if (!users[targetUser]) {
-        return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (!['admin', 'moderator', 'staff', 'joueur'].includes(role)) {
-        return res.status(400).json({ message: 'Invalid role' });
-    }
+    const validation = roleUpdateSchema.safeParse(req.body);
+    if (!validation.success) return res.status(400).json({ message: validation.error.issues[0].message });
 
     if (targetUser === req.user.username) {
         return res.status(400).json({ message: 'Cannot change your own role' });
     }
 
-    const requester = users[req.user.username];
-    const target = users[targetUser];
+    const db = await getDb();
+    const requester = await db.get('SELECT role FROM users WHERE username = ?', req.user.username);
+    const target = await db.get('SELECT role FROM users WHERE username = ?', targetUser);
 
-    // Moderator restrictions
+    if (!target) return res.status(404).json({ message: 'User not found' });
+
     if (requester.role === 'moderator') {
         if (target.role === 'admin' || target.role === 'moderator') {
-            return res.status(403).json({ message: 'Moderators cannot modify Admins or other Moderators' });
+            return res.status(403).json({ message: 'Forbidden' });
         }
         if (role === 'admin') {
             return res.status(403).json({ message: 'Moderators cannot promote to Admin' });
         }
     }
 
-    users[targetUser].role = role;
-    saveUsers();
+    await db.run('UPDATE users SET role = ? WHERE username = ?', role, targetUser);
     res.json({ message: 'Role updated' });
 });
 
-// Invitation / Registration Code (Simple Implementation)
-// In a real app, generate a unique code and store it.
-// here we can just sign a special JWT or just assume "Link copied" means we are done 
-// and registration checks for a code if we implemented that constraint. 
-// For now, let's just make an endpoint that returns a "invite link" structure
-// Generate a secure random code
-app.post('/api/admin/invite', authenticateToken, requireAdmin, (req, res) => {
-    // Generate a secure random code
+app.post('/api/admin/invite', authenticateToken, requireAdmin, async (req, res) => {
     const code = Math.random().toString(36).substring(7);
-    invites.push({
-        code,
-        createdAt: new Date().toISOString()
-    });
-    saveInvites();
-    res.json({ code }); // Frontend handles link construction
+    const db = await getDb();
+    await db.run('INSERT INTO invites (code, created_at) VALUES (?, ?)', code, new Date().toISOString());
+    res.json({ code });
 });
 
-app.get('/api/admin/invites', authenticateToken, requireAdmin, (req, res) => {
+app.get('/api/admin/invites', authenticateToken, requireAdmin, async (req, res) => {
+    const db = await getDb();
+    const invites = await db.all('SELECT * FROM invites');
     res.json(invites);
 });
 
-app.delete('/api/admin/invites/:code', authenticateToken, requireAdmin, (req, res) => {
+app.delete('/api/admin/invites/:code', authenticateToken, requireAdmin, async (req, res) => {
     const { code } = req.params;
-    const initialLength = invites.length;
+    const db = await getDb();
+    const result = await db.run('DELETE FROM invites WHERE code = ?', code);
 
-    // Filter out the code
-    const newInvites = invites.filter(inv => inv.code !== code);
-
-    if (newInvites.length === initialLength) {
+    if (result.changes === 0) {
         return res.status(404).json({ message: 'Invite not found' });
     }
-
-    // Update the array in place (since we imported a mutable reference? verify store.js)
-    // store.js exports `invites` which is `let initialInvites` assigned. Wait, `export const invites = initialInvites` exports a reference to the array. 
-    // Mutating the array `invites` works (push/splice). assigning a new array to `newInvites` logic requires clearing and pushing back or splicing.
-    invites.length = 0;
-    invites.push(...newInvites);
-
-    saveInvites();
     res.json({ message: 'Invite deleted' });
 });
 
 // Data Routes
-app.get('/api/data', authenticateToken, (req, res) => {
+app.get('/api/data', authenticateToken, async (req, res) => {
     const username = req.user.username;
-    if (!users[username]) {
-        return res.sendStatus(404);
-    }
-    const userData = users[username].data;
+    const db = await getDb();
+    const user = await db.get('SELECT data_json FROM users WHERE username = ?', username);
 
-    // Merge user profile with shared schools and criteria
+    if (!user) return res.sendStatus(404);
+
+    const userData = JSON.parse(user.data_json);
+
+    // Get Shared
+    const schoolsRow = await db.get('SELECT value_json FROM shared_data WHERE key = ?', 'schools');
+    const criteriaRow = await db.get('SELECT value_json FROM shared_data WHERE key = ?', 'criteria');
+
     const responseData = {
         profile: userData.profile,
-        schools: sharedData.schools,
-        criteria: sharedData.criteria
+        schools: schoolsRow ? JSON.parse(schoolsRow.value_json) : [],
+        criteria: criteriaRow ? JSON.parse(criteriaRow.value_json) : []
     };
 
     res.json(responseData);
 });
 
-app.post('/api/data', authenticateToken, (req, res) => {
+app.post('/api/data', authenticateToken, async (req, res) => {
     const username = req.user.username;
     const { profile, schools, criteria } = req.body;
-    const userRole = users[username].role;
 
-    // Update User Profile (Allowed for everyone)
-    if (profile) users[username].data.profile = profile;
+    const db = await getDb();
+    const user = await db.get('SELECT * FROM users WHERE username = ?', username);
 
-    // Update Shared Data (Allowed only for Admin/Moderator/Staff)
-    if (['admin', 'moderator', 'staff'].includes(userRole)) {
-        if (schools) sharedData.schools = schools;
-        if (criteria) sharedData.criteria = criteria;
-        saveSharedData();
+    // Update Profile
+    if (profile) {
+        let currentData = JSON.parse(user.data_json);
+        currentData.profile = profile;
+        await db.run('UPDATE users SET data_json = ? WHERE username = ?', JSON.stringify(currentData), username);
     }
 
-    saveUsers();
+    // Update Shared (Role check)
+    if (['admin', 'moderator', 'staff'].includes(user.role)) {
+        if (schools) {
+            await db.run('INSERT OR REPLACE INTO shared_data (key, value_json) VALUES (?, ?)', 'schools', JSON.stringify(schools));
+        }
+        if (criteria) {
+            await db.run('INSERT OR REPLACE INTO shared_data (key, value_json) VALUES (?, ?)', 'criteria', JSON.stringify(criteria));
+        }
+    }
 
     res.json({ message: 'Data saved successfully' });
 });
 
-// Serve static files from React app
+// Serve static files
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// Handle SPA routing
+// SPA handling
 app.get('*', (req, res) => {
-    // Check if request is for API
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ message: 'Not found' });
     }
-    // Check if dist exists, otherwise might fail if not built
     try {
         res.sendFile(path.join(__dirname, '../dist', 'index.html'));
     } catch (e) {
-        res.status(500).send("Build not found. Please run npm run build.");
+        res.status(500).send("Build not found.");
     }
 });
 
