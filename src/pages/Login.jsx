@@ -86,6 +86,16 @@ const Login = () => {
                         />
                     </div>
 
+                    <div style={{ textAlign: 'right', marginBottom: '15px' }}>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/forgot-password')}
+                            style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '0.9rem', padding: 0 }}
+                        >
+                            Mot de passe oublié ?
+                        </button>
+                    </div>
+
                     {!isLogin && (
                         <div className={styles.inputGroup}>
                             <label>Code d'invitation (Optionnel pour le 1er admin, requis ensuite)</label>
