@@ -20,6 +20,7 @@ const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'supersecretkey_dev';
 const REFRESH_SECRET_KEY = process.env.REFRESH_SECRET_KEY || 'superrefreshsecretkey_dev';
 
+app.set('trust proxy', 1); // Trust first proxy (Coolify/Nginx)
 app.use(helmet());
 app.use(cors({
     origin: true, // Allow all origins for dev, or specify frontend URL
