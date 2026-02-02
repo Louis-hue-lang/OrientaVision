@@ -9,6 +9,8 @@ const transporter = nodemailer.createTransport({
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
+    debug: true, // Show debug output
+    logger: true  // Log to console
 });
 
 const FROM_EMAIL = process.env.EMAIL_FROM || '"OrientaVision" <no-reply@orientavision.fr>';

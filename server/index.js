@@ -158,7 +158,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     // Send Email
     sendResetPasswordEmail(email, token);
 
-    res.json({ message: 'If account exists, email sent' });
+    res.json({ message: 'Si un compte existe avec cet email, un lien a été envoyé.' });
 });
 
 app.post('/api/auth/reset-password', async (req, res) => {
