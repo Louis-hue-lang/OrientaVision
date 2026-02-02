@@ -2,27 +2,27 @@ import { z } from 'zod';
 
 export const registerSchema = z.object({
     username: z.string()
-        .min(3, 'Username must be at least 3 characters long')
-        .max(20, 'Username must be at most 20 characters long')
-        .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
-    email: z.string().email('Invalid email address'),
+        .min(3, 'Le nom d\'utilisateur doit contenir au moins 3 caractères')
+        .max(20, 'Le nom d\'utilisateur doit contenir au plus 20 caractères')
+        .regex(/^[a-zA-Z0-9_]+$/, 'Le nom d\'utilisateur ne peut contenir que des lettres, chiffres et underscores'),
+    email: z.string().email('Adresse email invalide'),
     password: z.string()
-        .min(8, 'Password must be at least 8 characters long')
-        .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-        .regex(/[0-9]/, 'Password must contain at least one number'),
+        .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+        .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
+        .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre'),
     inviteCode: z.string().optional()
 });
 
 export const forgotPasswordSchema = z.object({
-    email: z.string().email('Invalid email address')
+    email: z.string().email('Adresse email invalide')
 });
 
 export const resetPasswordSchema = z.object({
     token: z.string(),
     password: z.string()
-        .min(8, 'Password must be at least 8 characters long')
-        .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-        .regex(/[0-9]/, 'Password must contain at least one number'),
+        .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+        .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
+        .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre'),
 });
 
 export const loginSchema = z.object({

@@ -8,6 +8,7 @@ const Login = () => {
     const [isLogin, setIsLogin] = useState(true);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('');
     const [inviteCode, setInviteCode] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -36,7 +37,7 @@ const Login = () => {
                 await login(username, password);
                 navigate('/');
             } else {
-                await register(username, password, inviteCode);
+                await register(username, email, password, inviteCode);
                 // Auto login after register? or ask to login?
                 // Let's ask to login for simplicity or just switch mode
                 setIsLogin(true);
@@ -75,6 +76,20 @@ const Login = () => {
                         />
                     </div>
 
+                    {!isLogin && (
+                        <div className={styles.inputGroup}>
+                            <label>Email</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className={styles.input}
+                                placeholder="exemple@email.com"
+                            />
+                        </div>
+                    )}
+
                     <div className={styles.inputGroup}>
                         <label>Mot de passe</label>
                         <input
@@ -106,6 +121,12 @@ const Login = () => {
                                 className={styles.input}
                                 placeholder="Requis sauf pour le premier compte"
                             />
+                        </div>
+                    )}
+
+                    {!isLogin && (
+                        <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '15px' }}>
+                            L'email est requis pour récupérer votre mot de passe si vous l'oubliez.
                         </div>
                     )}
 
