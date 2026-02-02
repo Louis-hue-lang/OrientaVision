@@ -5,11 +5,24 @@ export const registerSchema = z.object({
         .min(3, 'Username must be at least 3 characters long')
         .max(20, 'Username must be at most 20 characters long')
         .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+    email: z.string().email('Invalid email address'),
     password: z.string()
         .min(8, 'Password must be at least 8 characters long')
         .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
         .regex(/[0-9]/, 'Password must contain at least one number'),
-    inviteCode: z.string().optional() // Optional because first user doesn't need it, handled in logic but good to allow string
+    inviteCode: z.string().optional()
+});
+
+export const forgotPasswordSchema = z.object({
+    email: z.string().email('Invalid email address')
+});
+
+export const resetPasswordSchema = z.object({
+    token: z.string(),
+    password: z.string()
+        .min(8, 'Password must be at least 8 characters long')
+        .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+        .regex(/[0-9]/, 'Password must contain at least one number'),
 });
 
 export const loginSchema = z.object({

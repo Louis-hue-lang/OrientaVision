@@ -35,17 +35,22 @@ export const initializeDatabase = async () => {
     await db.exec(`
         CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
+            email TEXT,
             password_hash TEXT NOT NULL,
             role TEXT NOT NULL,
             data_json TEXT NOT NULL,
             refresh_token TEXT,
-            used_invite_code TEXT
+            used_invite_code TEXT,
+            reset_token TEXT,
+            reset_token_expires INTEGER
         );
     `);
 
+    // ... (keep other tables same) ...
     await db.exec(`
         CREATE TABLE IF NOT EXISTS invites (
             code TEXT PRIMARY KEY,
+            email TEXT,
             created_at TEXT NOT NULL
         );
     `);
@@ -56,6 +61,21 @@ export const initializeDatabase = async () => {
             value_json TEXT NOT NULL
         );
     `);
+
+    // Migration for existing tables (ensure new columns exist)
+    try {
+        await db.exec('ALTER TABLE users ADD COLUMN email TEXT');
+    } catch (e) { /* Column likely exists */ }
+    try {
+        await db.exec('ALTER TABLE users ADD COLUMN reset_token TEXT');
+    } catch (e) { /* Column likely exists */ }
+    try {
+        await db.exec('ALTER TABLE users ADD COLUMN reset_token_expires INTEGER');
+    } catch (e) { /* Column likely exists */ }
+    try {
+        await db.exec('ALTER TABLE invites ADD COLUMN email TEXT');
+    } catch (e) { /* Column likely exists */ }
+
 
     // Check if migration is needed (if users table is empty but users.json exists)
     const userCount = await db.get('SELECT count(*) as count FROM users');

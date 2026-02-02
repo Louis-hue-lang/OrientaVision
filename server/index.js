@@ -8,7 +8,9 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import { getDb, initializeDatabase } from './database.js';
-import { registerSchema, loginSchema, roleUpdateSchema } from './validation.js';
+import { registerSchema, loginSchema, roleUpdateSchema, forgotPasswordSchema, resetPasswordSchema } from './validation.js';
+import { sendInviteEmail, sendResetPasswordEmail } from './email.js';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -85,13 +87,13 @@ app.post('/api/auth/register', async (req, res) => {
         return res.status(400).json({ message: validation.error.issues[0].message });
     }
 
-    const { username, password, inviteCode } = validation.data;
+    const { username, password, inviteCode, email } = validation.data;
     const db = await getDb();
 
     // Check existing user
-    const existingUser = await db.get('SELECT username FROM users WHERE username = ?', username);
+    const existingUser = await db.get('SELECT username FROM users WHERE username = ? OR email = ?', username, email);
     if (existingUser) {
-        return res.status(409).json({ message: 'User already exists' });
+        return res.status(409).json({ message: 'User or email already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -116,11 +118,54 @@ app.post('/api/auth/register', async (req, res) => {
     });
 
     await db.run(
-        'INSERT INTO users (username, password_hash, role, data_json, used_invite_code) VALUES (?, ?, ?, ?, ?)',
-        username, hashedPassword, role, initialData, usedCode
+        'INSERT INTO users (username, email, password_hash, role, data_json, used_invite_code) VALUES (?, ?, ?, ?, ?, ?)',
+        username, email, hashedPassword, role, initialData, usedCode
     );
 
     res.status(201).json({ message: 'User created' });
+});
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+    const validation = forgotPasswordSchema.safeParse(req.body);
+    if (!validation.success) return res.status(400).json({ message: validation.error.issues[0].message });
+
+    const { email } = validation.data;
+    const db = await getDb();
+    const user = await db.get('SELECT username FROM users WHERE email = ?', email);
+
+    if (!user) {
+        // Don't leak exists/not exists
+        return res.json({ message: 'If account exists, email sent' });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = Date.now() + 3600000; // 1 hour
+
+    await db.run('UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE email = ?', token, expires, email);
+
+    // Send Email
+    sendResetPasswordEmail(email, token);
+
+    res.json({ message: 'If account exists, email sent' });
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+    const validation = resetPasswordSchema.safeParse(req.body);
+    if (!validation.success) return res.status(400).json({ message: validation.error.issues[0].message });
+
+    const { token, password } = validation.data;
+    const db = await getDb();
+
+    const user = await db.get('SELECT username FROM users WHERE reset_token = ? AND reset_token_expires > ?', token, Date.now());
+
+    if (!user) {
+        return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await db.run('UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL WHERE username = ?', hashedPassword, user.username);
+
+    res.json({ message: 'Password reset successful' });
 });
 
 app.post('/api/auth/login', async (req, res) => {
@@ -253,9 +298,15 @@ app.put('/api/admin/users/:username/role', authenticateToken, requireAdmin, asyn
 });
 
 app.post('/api/admin/invite', authenticateToken, requireAdmin, async (req, res) => {
+    const { email } = req.body; // Optional email to send invite to
     const code = Math.random().toString(36).substring(7);
     const db = await getDb();
-    await db.run('INSERT INTO invites (code, created_at) VALUES (?, ?)', code, new Date().toISOString());
+    await db.run('INSERT INTO invites (code, email, created_at) VALUES (?, ?, ?)', code, email || null, new Date().toISOString());
+
+    if (email) {
+        sendInviteEmail(email, code);
+    }
+
     res.json({ code });
 });
 
