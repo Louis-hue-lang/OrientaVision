@@ -20,7 +20,75 @@ const AdminDashboard = () => {
         fetchInvites();
     }, []);
 
-    // ... (fetchUsers, fetchInvites same)
+    const fetchUsers = async () => {
+        try {
+            const res = await fetch('/api/admin/users', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setUsers(await res.json());
+            } else {
+                setError('Impossible de récupérer les utilisateurs');
+            }
+        } catch (e) {
+            setError('Erreur réseau');
+        }
+    };
+
+    const fetchInvites = async () => {
+        try {
+            const res = await fetch('/api/admin/invites', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setInvites(await res.json());
+            }
+        } catch (e) {
+            console.error('Failed to fetch invites');
+        }
+    };
+
+    const handleDelete = async (username) => {
+        if (!confirm(`Supprimer l'utilisateur ${username} ?`)) return;
+
+        try {
+            const res = await fetch(`/api/admin/users/${username}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setUsers(users.filter(u => u.username !== username));
+                setMessage(`Utilisateur ${username} supprimé`);
+            } else {
+                const data = await res.json();
+                setError(data.message || 'Erreur lors de la suppression');
+            }
+        } catch (e) {
+            setError('Erreur réseau');
+        }
+    };
+
+    const handleRoleChange = async (username, newRole) => {
+        try {
+            const res = await fetch(`/api/admin/users/${username}/role`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ role: newRole })
+            });
+            if (res.ok) {
+                setUsers(users.map(u => u.username === username ? { ...u, role: newRole } : u));
+                setMessage(`Rôle de ${username} mis à jour en ${newRole}`);
+            } else {
+                const data = await res.json();
+                setError(data.message || 'Erreur lors de la mise à jour');
+            }
+        } catch (e) {
+            setError('Erreur réseau');
+        }
+    };
 
     const handleInvite = async () => {
         try {
@@ -54,7 +122,26 @@ const AdminDashboard = () => {
         }
     };
 
-    // ... (handleDelete, etc same)
+    const handleDeleteInvite = async (code) => {
+        if (!confirm('Supprimer cette invitation ?')) return;
+        try {
+            const res = await fetch(`/api/admin/invites/${code}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setInvites(invites.filter(i => i.code !== code));
+                setMessage('Invitation supprimée');
+            }
+        } catch (e) {
+            setError('Erreur réseau');
+        }
+    };
+
+    const copyLink = () => {
+        navigator.clipboard.writeText(inviteLink);
+        setMessage('Lien copié dans le presse-papier');
+    };
 
     return (
         <div className="container">
