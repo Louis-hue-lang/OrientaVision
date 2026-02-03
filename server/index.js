@@ -188,27 +188,68 @@ app.post('/api/auth/login', async (req, res) => {
 
     const { username, password } = validation.data;
     const db = await getDb();
-    const user = await db.get('SELECT * FROM users WHERE username = ?', username);
+
+    // Allow login with username OR email
+    const user = await db.get('SELECT * FROM users WHERE username = ? OR email = ?', username, username);
 
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+        return res.status(401).json({ message: 'Identifiant ou mot de passe incorrect' });
     }
 
     const { accessToken, refreshToken } = generateTokens(user);
 
-    // Store refresh token (hashed preferably, but for now plain is "okay" if DB is secure, let's store plain for simplicity of rotation check or hashed is best practice but requires migration complexity if we want to revoke. Storing plain allows easy revocation physically. Let's store plain for this iteration)
-    // Actually, secure cookie is the main protection. Storing in DB allows revocation.
-    await db.run('UPDATE users SET refresh_token = ? WHERE username = ?', refreshToken, username);
+    // Store refresh token
+    await db.run('UPDATE users SET refresh_token = ? WHERE username = ?', refreshToken, user.username);
 
     // Send HTTP-Only Cookie
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // true in https
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
-    res.json({ token: accessToken, username, role: user.role });
+    // Check if migration to email is required (if user has no email)
+    const migrationRequired = !user.email;
+
+    res.json({
+        token: accessToken,
+        username: user.username,
+        role: user.role,
+        migrationRequired
+    });
+});
+
+// Endpoint to update email (for migration)
+app.post('/api/auth/update-email', async (req, res) => {
+    // Basic validation manually or use schema
+    const { email } = req.body;
+    if (!email || !email.includes('@')) {
+        return res.status(400).json({ message: 'Email invalide' });
+    }
+
+    // Verify token (middleware logic simplified here, usually this route is protected)
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.sendStatus(401);
+
+    try {
+        const decoded = jwt.verify(token, SECRET_KEY);
+        const db = await getDb();
+
+        // Check if email already taken
+        const existing = await db.get('SELECT username FROM users WHERE email = ?', email);
+        if (existing) {
+            return res.status(409).json({ message: 'Cet email est déjà utilisé' });
+        }
+
+        await db.run('UPDATE users SET email = ? WHERE username = ?', email, decoded.username);
+        res.json({ message: 'Email mis à jour avec succès' });
+
+    } catch (err) {
+        return res.sendStatus(403);
+    }
 });
 
 app.post('/api/auth/refresh', async (req, res) => {

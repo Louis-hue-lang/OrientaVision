@@ -81,12 +81,15 @@ export const AuthProvider = ({ children }) => {
             }
 
             const data = await response.json();
+            // If migration required, we DO NOT fully log them in context yet?
+            // Actually we SHOULD log them in so they have the token to update email.
+            // context sets user/token immediately.
             setToken(data.token);
             setUser({ username: data.username, role: data.role });
             localStorage.setItem('ov_token', data.token);
             localStorage.setItem('ov_username', data.username);
             localStorage.setItem('ov_role', data.role);
-            return true;
+            return data; // Return full data so component knows about migrationRequired
         } catch (err) {
             throw err;
         }

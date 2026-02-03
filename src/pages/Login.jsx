@@ -13,7 +13,11 @@ const Login = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const { login, register } = useAuth();
+    // Migration State
+    const [migrationMode, setMigrationMode] = useState(false);
+    const [migrationEmail, setMigrationEmail] = useState('');
+
+    const { login, register, token } = useAuth();
     const navigate = useNavigate();
 
     // Check unique URL param on mount
@@ -23,7 +27,6 @@ const Login = () => {
         if (invite) {
             setInviteCode(invite);
             setIsLogin(false); // Switch to register mode
-            // Clear param to clean URL? Optional.
         }
     }, []);
 
@@ -34,23 +37,94 @@ const Login = () => {
 
         try {
             if (isLogin) {
-                await login(username, password);
+                const data = await login(username, password);
+                if (data.migrationRequired) {
+                    setMigrationMode(true);
+                    setLoading(false);
+                    return; // Don't navigate yet
+                }
                 navigate('/');
             } else {
                 await register(username, email, password, inviteCode);
-                // Auto login after register? or ask to login?
-                // Let's ask to login for simplicity or just switch mode
                 setIsLogin(true);
                 setError('Compte créé avec succès ! Connectez-vous.');
-                setLoading(false); // Stop loading to show message
+                setLoading(false);
                 return;
             }
         } catch (err) {
             setError(err.message);
         } finally {
+            if (!migrationMode) setLoading(false);
+        }
+    };
+
+    const handleMigrationSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        try {
+            const response = await fetch('/api/auth/update-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ email: migrationEmail })
+            });
+
+            if (response.ok) {
+                // Success: Alert user and navigate
+                alert("Email enregistré ! Utilisez désormais cet email pour vous connecter.");
+                navigate('/');
+            } else {
+                const data = await response.json();
+                setError(data.message || "Erreur lors de la mise à jour");
+                setLoading(false);
+            }
+        } catch (e) {
+            setError("Erreur serveur");
             setLoading(false);
         }
     };
+
+    if (migrationMode) {
+        return (
+            <div className={styles.container}>
+                <div className={styles.card}>
+                    <h1 className={styles.title}>Mise à jour requise</h1>
+                    <div className={`${styles.alert} ${styles.info}`} style={{ backgroundColor: '#e3f2fd', color: '#0d47a1', border: '1px solid #90caf9' }}>
+                        <AlertCircle size={16} />
+                        <span>Veuillez renseigner votre email. Il remplacera votre identifiant pour vos prochaines connexions.</span>
+                    </div>
+
+                    {error && (
+                        <div className={`${styles.alert} ${styles.error}`}>
+                            <AlertCircle size={16} />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleMigrationSubmit} className={styles.form}>
+                        <div className={styles.inputGroup}>
+                            <label>Votre Adresse Email</label>
+                            <input
+                                type="email"
+                                value={migrationEmail}
+                                onChange={(e) => setMigrationEmail(e.target.value)}
+                                required
+                                className={styles.input}
+                                placeholder="exemple@email.com"
+                            />
+                        </div>
+                        <button type="submit" disabled={loading} className={styles.submitButton}>
+                            {loading ? 'Enregistrement...' : 'Valider et continuer'}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.container}>
@@ -66,13 +140,14 @@ const Login = () => {
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.inputGroup}>
-                        <label>Identifiant</label>
+                        <label>{isLogin ? 'Email ou Identifiant' : 'Identifiant (Affichage)'}</label>
                         <input
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             required
                             className={styles.input}
+                            placeholder={isLogin ? "Entrez votre email ou identifiant" : "Choisissez un pseudo"}
                         />
                     </div>
 
