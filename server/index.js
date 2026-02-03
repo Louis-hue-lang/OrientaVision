@@ -113,16 +113,20 @@ app.post('/api/auth/register', async (req, res) => {
     const isFirstUser = userCount === 0;
 
     let usedCode = isFirstUser ? 'First Admin' : inviteCode;
+    let role = isFirstUser ? 'admin' : 'joueur';
 
     if (!isFirstUser) {
         const invite = await db.get('SELECT * FROM invites WHERE code = ?', inviteCode);
         if (!invite) {
-            return res.status(403).json({ message: 'Invalid or missing invite code' });
+            return res.status(403).json({ message: 'Code d\'invitation invalide ou manquant' });
+        }
+        // Use the role defined in the invite, default to 'joueur' if missing (legacy)
+        if (invite.role) {
+            role = invite.role;
         }
         await db.run('DELETE FROM invites WHERE code = ?', inviteCode);
     }
 
-    const role = isFirstUser ? 'admin' : 'joueur';
     const initialData = JSON.stringify({
         profile: null,
         schools: [],
@@ -134,7 +138,7 @@ app.post('/api/auth/register', async (req, res) => {
         username, email, hashedPassword, role, initialData, usedCode
     );
 
-    res.status(201).json({ message: 'User created' });
+    res.status(201).json({ message: 'Compte créé avec succès' });
 });
 
 app.post('/api/auth/forgot-password', async (req, res) => {
@@ -351,16 +355,21 @@ app.put('/api/admin/users/:username/role', authenticateToken, requireAdmin, asyn
 });
 
 app.post('/api/admin/invite', authenticateToken, requireAdmin, async (req, res) => {
-    const { email } = req.body; // Optional email to send invite to
+    const { email, role } = req.body; // Optional email and role
     const code = Math.random().toString(36).substring(7);
+    const targetRole = role || 'joueur'; // Default role
+
     const db = await getDb();
-    await db.run('INSERT INTO invites (code, email, created_at) VALUES (?, ?, ?)', code, email || null, new Date().toISOString());
+    await db.run('INSERT INTO invites (code, email, role, created_at) VALUES (?, ?, ?, ?)',
+        code, email || null, targetRole, new Date().toISOString()
+    );
 
     if (email) {
-        sendInviteEmail(email, code);
+        // Send email (async, don't block response)
+        sendInviteEmail(email, code).catch(err => console.error("Failed to send invite email", err));
     }
 
-    res.json({ code });
+    res.json({ code, role: targetRole, email });
 });
 
 app.get('/api/admin/invites', authenticateToken, requireAdmin, async (req, res) => {

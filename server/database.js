@@ -51,6 +51,7 @@ export const initializeDatabase = async () => {
         CREATE TABLE IF NOT EXISTS invites (
             code TEXT PRIMARY KEY,
             email TEXT,
+            role TEXT,
             created_at TEXT NOT NULL
         );
     `);
@@ -74,6 +75,9 @@ export const initializeDatabase = async () => {
     } catch (e) { /* Column likely exists */ }
     try {
         await db.exec('ALTER TABLE invites ADD COLUMN email TEXT');
+    } catch (e) { /* Column likely exists */ }
+    try {
+        await db.exec('ALTER TABLE invites ADD COLUMN role TEXT');
     } catch (e) { /* Column likely exists */ }
 
 
