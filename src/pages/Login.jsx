@@ -194,13 +194,13 @@ const Login = () => {
 
                     {!isLogin && (
                         <div className={styles.inputGroup}>
-                            <label>Code d'invitation (Optionnel pour le 1er admin, requis ensuite)</label>
+                            <label>Code d'invitation</label>
                             <input
                                 type="text"
                                 value={inviteCode}
                                 onChange={(e) => setInviteCode(e.target.value)}
                                 className={styles.input}
-                                placeholder="Requis sauf pour le premier compte"
+                                placeholder="Entrez votre code d'invitation"
                             />
                         </div>
                     )}
