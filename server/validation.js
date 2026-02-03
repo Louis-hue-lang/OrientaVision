@@ -2,9 +2,10 @@ import { z } from 'zod';
 
 export const registerSchema = z.object({
     username: z.string()
-        .min(3, 'Le nom d\'utilisateur doit contenir au moins 3 caractères')
-        .max(20, 'Le nom d\'utilisateur doit contenir au plus 20 caractères')
-        .regex(/^[a-zA-Z0-9_]+$/, 'Le nom d\'utilisateur ne peut contenir que des lettres, chiffres et underscores'),
+        .min(3, 'Le nom doit contenir au moins 3 caractères')
+        .max(50, 'Le nom doit contenir au plus 50 caractères')
+        // Allow letters (including accents), digits, spaces, hyphens, apostrophes (for d'...)
+        .regex(/^[a-zA-Z0-9\s\-_'À-ÿ]+$/, 'Caractères autorisés : lettres, chiffres, espaces, tirets'),
     email: z.string().email('Adresse email invalide'),
     password: z.string().min(1, 'Le mot de passe ne peut pas être vide'),
     inviteCode: z.string().optional()

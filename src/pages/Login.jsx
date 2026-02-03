@@ -140,14 +140,14 @@ const Login = () => {
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.inputGroup}>
-                        <label>{isLogin ? 'Email ou Identifiant' : 'Identifiant (Affichage)'}</label>
+                        <label>{isLogin ? 'Email ou Identifiant' : 'NOM Prénom'}</label>
                         <input
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             required
                             className={styles.input}
-                            placeholder={isLogin ? "Entrez votre email ou identifiant" : "Choisissez un pseudo"}
+                            placeholder={isLogin ? "Entrez votre email ou identifiant" : "NOM Prénom (ex: DUPONT Jean)"}
                         />
                     </div>
 
