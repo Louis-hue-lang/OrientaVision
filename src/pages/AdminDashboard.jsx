@@ -226,6 +226,7 @@ const AdminDashboard = () => {
                     <thead>
                         <tr>
                             <th>Utilisateur</th>
+                            <th>Email</th>
                             <th>Rôle</th>
                             <th>Invitation</th>
                             <th style={{ textAlign: 'right' }}>Actions</th>
@@ -235,6 +236,7 @@ const AdminDashboard = () => {
                         {users.map(u => (
                             <tr key={u.username}>
                                 <td>{u.username}</td>
+                                <td><span style={{ color: u.email ? 'inherit' : '#ffffff50' }}>{u.email || 'Non renseigné'}</span></td>
                                 <td>
                                     {/* Prevent self-edit OR Moderator modifying Admin OR Moderator modifying other Moderators */}
                                     {u.username === user.username || (user.role === 'moderator' && (u.role === 'admin' || u.role === 'moderator')) ? (

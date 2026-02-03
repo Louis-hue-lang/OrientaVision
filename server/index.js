@@ -297,7 +297,7 @@ app.post('/api/auth/logout', async (req, res) => {
 // Admin Routes
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
     const db = await getDb();
-    const users = await db.all('SELECT username, role, used_invite_code as usedInviteCode FROM users');
+    const users = await db.all('SELECT username, email, role, used_invite_code as usedInviteCode FROM users');
     res.json(users);
 });
 
