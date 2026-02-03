@@ -27,3 +27,15 @@ export const requireAdmin = async (req, res, next) => {
         res.status(403).json({ message: 'Accès administrateur requis' });
     }
 };
+
+export const requireInvitePermission = async (req, res, next) => {
+    const db = await getDb();
+    const user = await db.get('SELECT role FROM users WHERE username = ?', req.user.username);
+
+    if (user && (user.role === 'admin' || user.role === 'moderator' || user.role === 'staff')) {
+        req.userRole = user.role; // store for later use
+        next();
+    } else {
+        res.status(403).json({ message: 'Accès non autorisé' });
+    }
+};

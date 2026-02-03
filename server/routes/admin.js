@@ -1,21 +1,19 @@
 import express from 'express';
 import { getDb } from '../database.js';
-import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { authenticateToken, requireAdmin, requireInvitePermission } from '../middleware/auth.js';
 import { roleUpdateSchema } from '../validation.js';
 import { sendInviteEmail } from '../email.js';
 
 const router = express.Router();
 
-// Protect all admin routes
-router.use(authenticateToken, requireAdmin);
-
-router.get('/users', async (req, res) => {
+// User Management Routes (Admin/Moderator only)
+router.get('/users', authenticateToken, requireAdmin, async (req, res) => {
     const db = await getDb();
     const users = await db.all('SELECT username, email, role, used_invite_code as usedInviteCode FROM users');
     res.json(users);
 });
 
-router.delete('/users/:username', async (req, res) => {
+router.delete('/users/:username', authenticateToken, requireAdmin, async (req, res) => {
     const targetUser = req.params.username;
     if (targetUser === req.user.username) {
         return res.status(400).json({ message: 'Impossible de supprimer votre propre compte' });
@@ -35,10 +33,11 @@ router.delete('/users/:username', async (req, res) => {
     }
 
     await db.run('DELETE FROM users WHERE username = ?', targetUser);
+    await db.run('DELETE FROM users WHERE username = ?', targetUser);
     res.json({ message: 'Utilisateur supprimé' });
 });
 
-router.put('/users/:username/role', async (req, res) => {
+router.put('/users/:username/role', authenticateToken, requireAdmin, async (req, res) => {
     const targetUser = req.params.username;
     const { role } = req.body;
 
@@ -68,8 +67,15 @@ router.put('/users/:username/role', async (req, res) => {
     res.json({ message: 'Rôle mis à jour' });
 });
 
-router.post('/invite', async (req, res) => {
-    const { email, role } = req.body;
+// Invite Management Routes (Admin, Moderator, Staff)
+router.post('/invite', authenticateToken, requireInvitePermission, async (req, res) => {
+    let { email, role } = req.body;
+
+    // Staff can only invite 'joueur'
+    if (req.userRole === 'staff') {
+        role = 'joueur';
+    }
+
     const code = Math.random().toString(36).substring(7);
     const targetRole = role || 'joueur';
 
@@ -85,13 +91,13 @@ router.post('/invite', async (req, res) => {
     res.json({ code, role: targetRole, email });
 });
 
-router.get('/invites', async (req, res) => {
+router.get('/invites', authenticateToken, requireInvitePermission, async (req, res) => {
     const db = await getDb();
     const invites = await db.all('SELECT * FROM invites');
     res.json(invites);
 });
 
-router.delete('/invites/:code', async (req, res) => {
+router.delete('/invites/:code', authenticateToken, requireInvitePermission, async (req, res) => {
     const { code } = req.params;
     const db = await getDb();
     const result = await db.run('DELETE FROM invites WHERE code = ?', code);

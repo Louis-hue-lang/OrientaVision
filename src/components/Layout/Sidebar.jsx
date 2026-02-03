@@ -21,7 +21,7 @@ const Sidebar = () => {
         return true;
     });
 
-    if (user && (user.role === 'admin' || user.role === 'moderator')) {
+    if (user && (user.role === 'admin' || user.role === 'moderator' || user.role === 'staff')) {
         visibleItems.push({ to: '/admin', icon: <Shield size={24} />, label: 'Admin' });
     }
 

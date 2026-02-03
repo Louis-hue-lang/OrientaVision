@@ -21,6 +21,7 @@ const AdminDashboard = () => {
     }, []);
 
     const fetchUsers = async () => {
+        if (user?.role === 'staff') return; // Staff don't see users
         try {
             const res = await fetch('/api/admin/users', {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -163,11 +164,16 @@ const AdminDashboard = () => {
                         onChange={(e) => setNewInviteRole(e.target.value)}
                         className={styles.roleSelect}
                         style={{ padding: '8px' }}
+                        disabled={user?.role === 'staff'}
                     >
                         <option value="joueur">Joueur</option>
-                        <option value="staff">Staff</option>
-                        <option value="moderator">Modérateur</option>
-                        <option value="admin">Admin</option>
+                        {user?.role !== 'staff' && (
+                            <>
+                                <option value="staff">Staff</option>
+                                <option value="moderator">Modérateur</option>
+                                <option value="admin">Admin</option>
+                            </>
+                        )}
                     </select>
 
                     <input
@@ -221,63 +227,65 @@ const AdminDashboard = () => {
                 )}
             </div>
 
-            <div className={`card ${styles.tableCard}`}>
-                <table className={styles.table}>
-                    <thead>
-                        <tr>
-                            <th>Utilisateur</th>
-                            <th>Email</th>
-                            <th>Rôle</th>
-                            <th>Invitation</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map(u => (
-                            <tr key={u.username}>
-                                <td>{u.username}</td>
-                                <td><span style={{ color: u.email ? 'inherit' : '#ffffff50' }}>{u.email || 'Non renseigné'}</span></td>
-                                <td>
-                                    {/* Prevent self-edit OR Moderator modifying Admin OR Moderator modifying other Moderators */}
-                                    {u.username === user.username || (user.role === 'moderator' && (u.role === 'admin' || u.role === 'moderator')) ? (
-                                        <span className={`${styles.badge} ${styles.adminBadge}`}>
-                                            {u.role === 'admin' ? 'Admin' : u.role}
-                                        </span>
-                                    ) : (
-                                        <select
-                                            value={u.role}
-                                            onChange={(e) => handleRoleChange(u.username, e.target.value)}
-                                            className={styles.roleSelect}
-                                        >
-                                            {/* Moderator cannot promote to Admin */}
-                                            {user.role === 'admin' && <option value="admin">Admin</option>}
-                                            {/* Moderator allow set to moderator? Assuming yes, they can promote others, just not demote peers */}
-                                            <option value="moderator">Modérateur</option>
-                                            <option value="staff">Staff</option>
-                                            <option value="joueur">Joueur</option>
-                                        </select>
-                                    )}
-                                </td>
-                                <td>
-                                    <small style={{ opacity: 0.7 }}>{u.usedInviteCode}</small>
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
-                                    {/* Prevent deleting self OR Moderator deleting Admin OR Moderator deleting other Moderators */}
-                                    {u.username !== user.username && !(user.role === 'moderator' && (u.role === 'admin' || u.role === 'moderator')) && (
-                                        <button
-                                            onClick={() => handleDelete(u.username)}
-                                            className={styles.deleteButton}
-                                            title="Supprimer"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    )}
-                                </td>
+            {user?.role !== 'staff' && (
+                <div className={`card ${styles.tableCard}`}>
+                    <table className={styles.table}>
+                        <thead>
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Email</th>
+                                <th>Rôle</th>
+                                <th>Invitation</th>
+                                <th style={{ textAlign: 'right' }}>Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {users.map(u => (
+                                <tr key={u.username}>
+                                    <td>{u.username}</td>
+                                    <td><span style={{ color: u.email ? 'inherit' : '#ffffff50' }}>{u.email || 'Non renseigné'}</span></td>
+                                    <td>
+                                        {/* Prevent self-edit OR Moderator modifying Admin OR Moderator modifying other Moderators */}
+                                        {u.username === user.username || (user.role === 'moderator' && (u.role === 'admin' || u.role === 'moderator')) ? (
+                                            <span className={`${styles.badge} ${styles.adminBadge}`}>
+                                                {u.role === 'admin' ? 'Admin' : u.role}
+                                            </span>
+                                        ) : (
+                                            <select
+                                                value={u.role}
+                                                onChange={(e) => handleRoleChange(u.username, e.target.value)}
+                                                className={styles.roleSelect}
+                                            >
+                                                {/* Moderator cannot promote to Admin */}
+                                                {user.role === 'admin' && <option value="admin">Admin</option>}
+                                                {/* Moderator allow set to moderator? Assuming yes, they can promote others, just not demote peers */}
+                                                <option value="moderator">Modérateur</option>
+                                                <option value="staff">Staff</option>
+                                                <option value="joueur">Joueur</option>
+                                            </select>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <small style={{ opacity: 0.7 }}>{u.usedInviteCode}</small>
+                                    </td>
+                                    <td style={{ textAlign: 'right' }}>
+                                        {/* Prevent deleting self OR Moderator deleting Admin OR Moderator deleting other Moderators */}
+                                        {u.username !== user.username && !(user.role === 'moderator' && (u.role === 'admin' || u.role === 'moderator')) && (
+                                            <button
+                                                onClick={() => handleDelete(u.username)}
+                                                className={styles.deleteButton}
+                                                title="Supprimer"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 };
