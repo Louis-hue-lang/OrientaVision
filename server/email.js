@@ -9,8 +9,8 @@ const transporter = nodemailer.createTransport({
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
-    debug: true, // Show debug output
-    logger: true  // Log to console
+    debug: false, // Disable debug output
+    logger: false  // Disable console logger
 });
 
 // Use authenticated user as sender to avoid "Invalid FROM" errors

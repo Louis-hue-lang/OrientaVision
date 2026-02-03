@@ -17,6 +17,15 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Check for secrets in production
+if (process.env.NODE_ENV === 'production') {
+    if (!process.env.SECRET_KEY || !process.env.REFRESH_SECRET_KEY) {
+        console.error('FATAL: SECRET_KEY and REFRESH_SECRET_KEY must be set in production.');
+        process.exit(1);
+    }
+}
+
 const SECRET_KEY = process.env.SECRET_KEY || 'supersecretkey_dev';
 const REFRESH_SECRET_KEY = process.env.REFRESH_SECRET_KEY || 'superrefreshsecretkey_dev';
 
@@ -202,10 +211,13 @@ app.post('/api/auth/login', async (req, res) => {
 
     const { accessToken, refreshToken } = generateTokens(user);
 
-    // Store refresh token
-    await db.run('UPDATE users SET refresh_token = ? WHERE username = ?', refreshToken, user.username);
+    // Hash refresh token before storing
+    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
 
-    // Send HTTP-Only Cookie
+    // Store refresh token HASH
+    await db.run('UPDATE users SET refresh_token = ? WHERE username = ?', refreshTokenHash, user.username);
+
+    // Send HTTP-Only Cookie (unhashed)
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -260,18 +272,24 @@ app.post('/api/auth/refresh', async (req, res) => {
     const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) return res.sendStatus(401);
 
-    const db = await getDb();
-    const user = await db.get('SELECT * FROM users WHERE refresh_token = ?', refreshToken);
+    jwt.verify(refreshToken, REFRESH_SECRET_KEY, async (err, decoded) => {
+        if (err) return res.sendStatus(403); // Invalid signature or expired
 
-    if (!user) return res.sendStatus(403);
+        const db = await getDb();
+        // Look up by username from valid token
+        const user = await db.get('SELECT * FROM users WHERE username = ?', decoded.username);
 
-    jwt.verify(refreshToken, REFRESH_SECRET_KEY, (err, decoded) => {
-        if (err || user.username !== decoded.username) return res.sendStatus(403);
+        if (!user || !user.refresh_token) return res.sendStatus(403); // No user or no active session
 
-        const { accessToken, refreshToken: newRefreshToken } = generateTokens(user);
+        // Verify the token matches the stored hash
+        const isValid = await bcrypt.compare(refreshToken, user.refresh_token);
+        if (!isValid) return res.sendStatus(403); // Token reuse or invalid
 
         // Rotate Refresh Token
-        db.run('UPDATE users SET refresh_token = ? WHERE username = ?', newRefreshToken, user.username);
+        const { accessToken, refreshToken: newRefreshToken } = generateTokens(user);
+        const newRefreshTokenHash = await bcrypt.hash(newRefreshToken, 10);
+
+        await db.run('UPDATE users SET refresh_token = ? WHERE username = ?', newRefreshTokenHash, user.username);
 
         res.cookie('refreshToken', newRefreshToken, {
             httpOnly: true,
@@ -287,8 +305,12 @@ app.post('/api/auth/refresh', async (req, res) => {
 app.post('/api/auth/logout', async (req, res) => {
     const refreshToken = req.cookies.refreshToken;
     if (refreshToken) {
-        const db = await getDb();
-        await db.run('UPDATE users SET refresh_token = NULL WHERE refresh_token = ?', refreshToken);
+        // Try to decode to find which user to logout
+        const decoded = jwt.decode(refreshToken);
+        if (decoded && decoded.username) {
+            const db = await getDb();
+            await db.run('UPDATE users SET refresh_token = NULL WHERE username = ?', decoded.username);
+        }
     }
     res.clearCookie('refreshToken');
     res.sendStatus(204);
