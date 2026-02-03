@@ -104,7 +104,6 @@ const ResetPassword = () => {
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 required
-                                minLength={8}
                                 className={styles.input}
                             />
                         </div>
