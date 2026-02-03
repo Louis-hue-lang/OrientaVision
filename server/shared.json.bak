@@ -1,0 +1,57 @@
+{
+  "schools": [
+    {
+      "name": "INSA",
+      "color": "#f43f5e",
+      "scores": {
+        "autonomy": 5,
+        "workEnvironment": 5,
+        "cost": 5,
+        "flexibility": 5,
+        "workload": 5,
+        "cadre": 5
+      },
+      "id": 1769693560115
+    },
+    {
+      "name": "STAPS",
+      "color": "#f97316",
+      "scores": {
+        "autonomy": 8,
+        "workEnvironment": 5,
+        "cost": 5,
+        "flexibility": 5,
+        "workload": 5,
+        "cadre": 9
+      },
+      "id": 1769693622347
+    }
+  ],
+  "criteria": [
+    {
+      "id": "autonomy",
+      "label": "Autonomie",
+      "color": "#8884d8"
+    },
+    {
+      "id": "cost",
+      "label": "Coût",
+      "color": "#ffc658"
+    },
+    {
+      "id": "flexibility",
+      "label": "Flexibilité",
+      "color": "#ff7300"
+    },
+    {
+      "id": "workload",
+      "label": "Charge de travail",
+      "color": "#387908"
+    },
+    {
+      "label": "Cadre",
+      "color": "#f75fa8",
+      "id": "cadre"
+    }
+  ]
+}
