@@ -90,9 +90,12 @@ const ResetPassword = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                minLength={8}
                                 className={styles.input}
                             />
+                            <div style={{ fontSize: '0.8rem', color: '#fb8c00', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <AlertCircle size={12} />
+                                <span>Privilégiez un mot de passe complexe pour votre sécurité.</span>
+                            </div>
                         </div>
                         <div className={styles.inputGroup}>
                             <label>Confirmer le mot de passe</label>

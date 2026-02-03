@@ -174,6 +174,12 @@ const Login = () => {
                             required
                             className={styles.input}
                         />
+                        {!isLogin && (
+                            <div style={{ fontSize: '0.8rem', color: '#fb8c00', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <AlertCircle size={12} />
+                                <span>Privilégiez un mot de passe complexe pour votre sécurité.</span>
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ textAlign: 'right', marginBottom: '15px' }}>

@@ -6,10 +6,7 @@ export const registerSchema = z.object({
         .max(20, 'Le nom d\'utilisateur doit contenir au plus 20 caractères')
         .regex(/^[a-zA-Z0-9_]+$/, 'Le nom d\'utilisateur ne peut contenir que des lettres, chiffres et underscores'),
     email: z.string().email('Adresse email invalide'),
-    password: z.string()
-        .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
-        .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
-        .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre'),
+    password: z.string().min(1, 'Le mot de passe ne peut pas être vide'),
     inviteCode: z.string().optional()
 });
 
@@ -19,10 +16,7 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
     token: z.string(),
-    password: z.string()
-        .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
-        .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
-        .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre'),
+    password: z.string().min(1, 'Le mot de passe ne peut pas être vide'),
 });
 
 export const loginSchema = z.object({
