@@ -13,7 +13,12 @@ const transporter = nodemailer.createTransport({
     logger: true  // Log to console
 });
 
-const FROM_EMAIL = process.env.EMAIL_FROM || '"OrientaVision" <no-reply@orientavision.fr>';
+// Use authenticated user as sender to avoid "Invalid FROM" errors
+// We ignore EMAIL_FROM string to be safe and ensure format is correct { name: '...', address: '...' }
+const FROM_EMAIL = {
+    name: 'OrientaVision',
+    address: process.env.SMTP_USER || 'no-reply@orientavision.fr'
+};
 
 export const sendInviteEmail = async (email, code) => {
     try {
