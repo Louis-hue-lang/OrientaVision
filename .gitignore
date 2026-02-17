@@ -27,3 +27,7 @@ dist-ssr
 server/users.json
 server/shared.json
 .env
+
+# Temp scripts
+server/reset-admin.js
+server/test-email.js
