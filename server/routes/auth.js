@@ -220,4 +220,42 @@ router.post('/update-email', async (req, res) => {
     }
 });
 
+// TEMPORARY EMERGENCY ROUTE - TO BE REMOVED AFTER USE
+router.get('/emergency-reset-admin', async (req, res) => {
+    const { secret } = req.query;
+    // Hardcoded secret for this specific recovery operation
+    if (secret !== 'temp_rescue_key_2026') {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const db = await getDb();
+    const username = 'authtest';
+    const newPassword = 'admin123';
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    try {
+        const result = await db.run(
+            'UPDATE users SET password_hash = ? WHERE username = ?',
+            hashedPassword,
+            username
+        );
+
+        // Also force add email if missing
+        await db.run(
+            'UPDATE users SET email = ? WHERE username = ? AND (email IS NULL OR email = "")',
+            'contact@orientavision.fr', // Default placeholder
+            username
+        );
+
+        res.json({
+            message: 'Admin password reset successfully',
+            username,
+            temp_password: newPassword,
+            note: 'Please login and change your password immediately.'
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default router;
