@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { KeyRound, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
+import { KeyRound, ArrowLeft, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import styles from './Login.module.css';
 
 const ResetPassword = () => {
@@ -10,6 +10,8 @@ const ResetPassword = () => {
 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [status, setStatus] = useState('idle');
     const [message, setMessage] = useState('');
 
@@ -85,13 +87,24 @@ const ResetPassword = () => {
                     <form onSubmit={handleSubmit} className={styles.form}>
                         <div className={styles.inputGroup}>
                             <label>Nouveau mot de passe</label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                className={styles.input}
-                            />
+                            <div className={styles.passwordWrapper}>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    className={styles.input}
+                                    style={{ paddingRight: '40px' }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className={styles.eyeButton}
+                                    tabIndex="-1"
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
                             <div style={{ fontSize: '0.8rem', color: '#fb8c00', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                                 <AlertCircle size={12} />
                                 <span>Privilégiez un mot de passe complexe pour votre sécurité.</span>
@@ -99,13 +112,24 @@ const ResetPassword = () => {
                         </div>
                         <div className={styles.inputGroup}>
                             <label>Confirmer le mot de passe</label>
-                            <input
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                required
-                                className={styles.input}
-                            />
+                            <div className={styles.passwordWrapper}>
+                                <input
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    required
+                                    className={styles.input}
+                                    style={{ paddingRight: '40px' }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className={styles.eyeButton}
+                                    tabIndex="-1"
+                                >
+                                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
                         </div>
 
                         <button type="submit" disabled={status === 'loading'} className={styles.submitButton}>
