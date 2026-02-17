@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
         pass: process.env.SMTP_PASSWORD || process.env.SMTP_PASS, // Prioritize SMTP_PASSWORD
     },
     tls: {
-        ciphers: 'SSLv3'
+        rejectUnauthorized: false
     },
     debug: false, // Disable debug output
     logger: false  // Disable console logger
