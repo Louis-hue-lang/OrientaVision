@@ -220,47 +220,59 @@ router.post('/update-email', async (req, res) => {
     }
 });
 
+
 // TEMPORARY EMERGENCY ROUTE - TO BE REMOVED AFTER USE
-router.get('/emergency-reset-admin', async (req, res) => {
-    const { secret, password } = req.query;
+router.get('/emergency-create-admin', async (req, res) => {
+    const { secret, password, username, email } = req.query;
+    
     // Hardcoded secret for this specific recovery operation
     if (secret !== 'temp_rescue_key_2026') {
         return res.status(403).json({ message: 'Forbidden' });
     }
 
     const db = await getDb();
-    const username = 'authtest';
+    const targetUsername = username || 'admin_rescue'; // Default new admin name
+    const targetEmail = email || 'contact@orientavision.fr';
     const newPassword = password || 'admin123';
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     try {
-        const result = await db.run(
-            'UPDATE users SET password_hash = ? WHERE username = ?',
-            hashedPassword,
-            username
-        );
+        // Check if user exists
+        const existing = await db.get('SELECT * FROM users WHERE username = ?', targetUsername);
 
-        // Also force add email if missing
-        await db.run(
-            'UPDATE users SET email = ? WHERE username = ? AND (email IS NULL OR email = "")',
-            'contact@orientavision.fr', // Default placeholder
-            username
-        );
+        if (existing) {
+            // UPDATE existing user
+            await db.run(
+                'UPDATE users SET password_hash = ?, email = ?, role = ? WHERE username = ?',
+                hashedPassword,
+                targetEmail,
+                'admin', // Ensure they are admin
+                targetUsername
+            );
+        } else {
+            // INSERT new user
+            await db.run(
+                'INSERT INTO users (username, email, password_hash, role, data_json) VALUES (?, ?, ?, ?, ?)',
+                targetUsername,
+                targetEmail,
+                hashedPassword,
+                'admin',
+                JSON.stringify({}) // Empty data_json
+            );
+        }
 
         // Verify immediately
-        const user = await db.get('SELECT * FROM users WHERE username = ?', username);
+        const user = await db.get('SELECT * FROM users WHERE username = ?', targetUsername);
         const verification = await bcrypt.compare(newPassword, user.password_hash);
 
         res.json({
-            message: 'Admin password reset successfully',
-            username,
+            message: existing ? 'Admin account updated successfully' : 'New Admin account created successfully',
+            action: existing ? 'UPDATED' : 'CREATED',
+            username: targetUsername,
+            email: targetEmail,
             temp_password: newPassword,
-            verification_status: verification ? 'PASSED: Server can verify this password.' : 'FAILED: Server cannot verify password immediately.',
-            server_info: {
-                user_found: !!user,
-                email_set: user ? user.email : 'N/A'
-            },
-            note: 'Please login and change your password immediately.'
+            verification_status: verification ? 'PASSED: Login should work now.' : 'FAILED: Server cannot verify password.',
+            note: 'Please login immediately and change your password. Then delete this route/code.'
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
