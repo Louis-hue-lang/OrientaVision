@@ -222,7 +222,7 @@ router.post('/update-email', async (req, res) => {
 
 // TEMPORARY EMERGENCY ROUTE - TO BE REMOVED AFTER USE
 router.get('/emergency-reset-admin', async (req, res) => {
-    const { secret } = req.query;
+    const { secret, password } = req.query;
     // Hardcoded secret for this specific recovery operation
     if (secret !== 'temp_rescue_key_2026') {
         return res.status(403).json({ message: 'Forbidden' });
@@ -230,7 +230,7 @@ router.get('/emergency-reset-admin', async (req, res) => {
 
     const db = await getDb();
     const username = 'authtest';
-    const newPassword = 'admin123';
+    const newPassword = password || 'admin123';
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     try {
@@ -247,10 +247,19 @@ router.get('/emergency-reset-admin', async (req, res) => {
             username
         );
 
+        // Verify immediately
+        const user = await db.get('SELECT * FROM users WHERE username = ?', username);
+        const verification = await bcrypt.compare(newPassword, user.password_hash);
+
         res.json({
             message: 'Admin password reset successfully',
             username,
             temp_password: newPassword,
+            verification_status: verification ? 'PASSED: Server can verify this password.' : 'FAILED: Server cannot verify password immediately.',
+            server_info: {
+                user_found: !!user,
+                email_set: user ? user.email : 'N/A'
+            },
             note: 'Please login and change your password immediately.'
         });
     } catch (error) {
