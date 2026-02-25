@@ -40,6 +40,11 @@ export const AppProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : initialCriteria;
   });
 
+  const [activeCriteria, setActiveCriteria] = useState(() => {
+    const saved = localStorage.getItem('ov_activeCriteria');
+    return saved ? JSON.parse(saved) : initialCriteria.map(c => c.id);
+  });
+
   // Track if data is initially loaded from server to avoid overwriting with local empty state
   const isDataLoaded = useRef(false);
 
@@ -56,6 +61,8 @@ export const AppProvider = ({ children }) => {
           if (data.profile) setProfile(data.profile);
           if (data.schools) setSchools(data.schools);
           if (data.criteria && data.criteria.length > 0) setCriteria(data.criteria);
+          if (data.activeCriteria) setActiveCriteria(data.activeCriteria);
+          else setActiveCriteria(data.criteria ? data.criteria.map(c => c.id) : initialCriteria.map(c => c.id));
           isDataLoaded.current = true;
         }
       } catch (e) {
@@ -99,6 +106,11 @@ export const AppProvider = ({ children }) => {
     if (token) saveDataToServer({ criteria });
   }, [criteria, token]);
 
+  useEffect(() => {
+    localStorage.setItem('ov_activeCriteria', JSON.stringify(activeCriteria));
+    if (token) saveDataToServer({ activeCriteria });
+  }, [activeCriteria, token]);
+
   // Actions
   const updateProfile = (key, value) => {
     setProfile(prev => ({ ...prev, [key]: value }));
@@ -128,13 +140,21 @@ export const AppProvider = ({ children }) => {
       delete newProfile[id];
       return newProfile;
     });
+    setActiveCriteria(prev => prev.filter(cId => cId !== id));
+  };
+
+  const toggleCriterionActive = (id) => {
+    setActiveCriteria(prev =>
+      prev.includes(id) ? prev.filter(cId => cId !== id) : [...prev, id]
+    );
   };
 
   return (
     <AppContext.Provider value={{
       profile, updateProfile,
       schools, addSchool, updateSchool, removeSchool,
-      criteria, addCriterion, removeCriterion
+      criteria, addCriterion, removeCriterion,
+      activeCriteria, setActiveCriteria, toggleCriterionActive
     }}>
       {children}
     </AppContext.Provider>

@@ -21,6 +21,7 @@ router.get('/', async (req, res) => {
 
     const responseData = {
         profile: userData.profile,
+        activeCriteria: userData.activeCriteria || [],
         schools: schoolsRow ? JSON.parse(schoolsRow.value_json) : [],
         criteria: criteriaRow ? JSON.parse(criteriaRow.value_json) : []
     };
@@ -30,15 +31,26 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     const username = req.user.username;
-    const { profile, schools, criteria } = req.body;
+    const { profile, activeCriteria, schools, criteria } = req.body;
 
     const db = await getDb();
     const user = await db.get('SELECT * FROM users WHERE username = ?', username);
 
-    // Update Profile
-    if (profile) {
-        let currentData = JSON.parse(user.data_json);
+    // Update Profile and Active Criteria
+    let changed = false;
+    let currentData = JSON.parse(user.data_json);
+
+    if (profile !== undefined) {
         currentData.profile = profile;
+        changed = true;
+    }
+
+    if (activeCriteria !== undefined) {
+        currentData.activeCriteria = activeCriteria;
+        changed = true;
+    }
+
+    if (changed) {
         await db.run('UPDATE users SET data_json = ? WHERE username = ?', JSON.stringify(currentData), username);
     }
 

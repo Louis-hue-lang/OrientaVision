@@ -4,7 +4,7 @@ import CustomRadarChart from '../components/UI/RadarChart';
 import styles from './Compare.module.css';
 
 const Compare = () => {
-    const { profile, schools, criteria } = useApp();
+    const { profile, schools, criteria, activeCriteria } = useApp();
     const [selectedSchoolIds, setSelectedSchoolIds] = useState([]);
 
     const toggleSchool = (id) => {
@@ -17,7 +17,8 @@ const Compare = () => {
 
     // Transform data for Recharts
     const chartData = useMemo(() => {
-        return criteria.map(c => {
+        const activeCriteriaObjects = criteria.filter(c => (activeCriteria || []).includes(c.id));
+        return activeCriteriaObjects.map(c => {
             const entry = { subject: c.label, fullMark: 10 };
             // User score
             entry.user = profile[c.id] || 0;
@@ -32,7 +33,7 @@ const Compare = () => {
 
             return entry;
         });
-    }, [criteria, profile, schools, selectedSchoolIds]);
+    }, [criteria, profile, schools, selectedSchoolIds, activeCriteria]);
 
     // key objects for the chart component to know which radars to render
     const schoolKeys = schools

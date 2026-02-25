@@ -1,10 +1,26 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import Slider from '../components/UI/Slider';
+import { ChevronDown, Check } from 'lucide-react';
 import styles from './MyProfile.module.css';
 
 const MyProfile = () => {
-    const { profile, updateProfile, criteria } = useApp();
+    const { profile, updateProfile, criteria, activeCriteria, toggleCriterionActive } = useApp();
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const activeCriteriaObjects = criteria.filter(c => activeCriteria.includes(c.id));
 
     return (
         <div className="container">
@@ -18,15 +34,61 @@ const MyProfile = () => {
             <div className={styles.grid}>
                 <div className={`card ${styles.evaluationCard}`}>
                     <h2 className={styles.sectionTitle}>Mes Critères</h2>
-                    {criteria.map((criterion) => (
-                        <Slider
-                            key={criterion.id}
-                            label={criterion.label}
-                            value={profile[criterion.id] || 0} // Fallback to 0 if key missing
-                            onChange={(val) => updateProfile(criterion.id, val)}
-                            color={criterion.color}
-                        />
-                    ))}
+
+                    <div className={styles.dropdownContainer} ref={dropdownRef}>
+                        <button
+                            className={styles.dropdownButton}
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        >
+                            <span>
+                                Filtrer les critères ({activeCriteria.length}/{criteria.length})
+                            </span>
+                            <ChevronDown
+                                size={20}
+                                style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                            />
+                        </button>
+
+                        {isDropdownOpen && (
+                            <div className={styles.dropdownMenu}>
+                                {criteria.map(criterion => (
+                                    <label key={criterion.id} className={styles.checkboxLabel}>
+                                        <input
+                                            type="checkbox"
+                                            checked={activeCriteria.includes(criterion.id)}
+                                            onChange={() => toggleCriterionActive(criterion.id)}
+                                        />
+                                        <div
+                                            className={styles.checkboxCustom}
+                                            style={{
+                                                backgroundColor: activeCriteria.includes(criterion.id) ? criterion.color : 'transparent',
+                                                borderColor: activeCriteria.includes(criterion.id) ? criterion.color : 'rgba(255,255,255,0.4)'
+                                            }}
+                                        >
+                                            {activeCriteria.includes(criterion.id) && <Check size={14} color="#1e1e2e" strokeWidth={3} />}
+                                        </div>
+                                        <span>{criterion.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {activeCriteriaObjects.length === 0 ? (
+                        <p style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic', textAlign: 'center', margin: '2rem 0' }}>
+                            Veuillez sélectionner au moins un critère.
+                        </p>
+                    ) : (
+                        activeCriteriaObjects.map((criterion) => (
+                            <Slider
+                                key={criterion.id}
+                                label={criterion.label}
+                                value={profile[criterion.id] || 0}
+                                onChange={(val) => updateProfile(criterion.id, val)}
+                                color={criterion.color}
+                            />
+                        ))
+                    )}
                 </div>
 
                 <div className={styles.instructionCard}>

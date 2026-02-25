@@ -29,6 +29,82 @@
     padding-bottom: var(--space-sm);
 }
 
+.dropdownContainer {
+    position: relative;
+    margin-bottom: var(--space-lg);
+}
+
+.dropdownButton {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: var(--space-md) var(--space-lg);
+    background-color: var(--color-bg-surface-hover);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dropdownButton:hover {
+    border-color: var(--color-primary);
+}
+
+.dropdownMenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: var(--space-xs);
+    background-color: var(--color-bg-surface-hover);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-sm);
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background-color 0.2s;
+}
+
+.checkboxLabel:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.checkboxCustom {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid var(--color-text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.checkboxLabel input:checked+.checkboxCustom {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.checkboxLabel input {
+    display: none;
+}
+
 .instructionTitle {
     font-size: 1.25rem;
     margin-bottom: var(--space-md);
