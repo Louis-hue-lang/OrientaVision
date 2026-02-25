@@ -13,6 +13,21 @@ const PRESET_COLORS = [
 const ManageSchools = () => {
     const { schools, addSchool, updateSchool, removeSchool, criteria } = useApp();
     const { user } = useAuth();
+
+    const sortedSchools = [...schools].sort((a, b) => {
+        const colorIndexA = PRESET_COLORS.indexOf(a.color);
+        const colorIndexB = PRESET_COLORS.indexOf(b.color);
+
+        const indexA = colorIndexA !== -1 ? colorIndexA : PRESET_COLORS.length;
+        const indexB = colorIndexB !== -1 ? colorIndexB : PRESET_COLORS.length;
+
+        if (indexA !== indexB) {
+            return indexA - indexB;
+        }
+
+        return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
+    });
+
     const [isEditing, setIsEditing] = useState(false);
     const [editingId, setEditingId] = useState(null);
 
@@ -152,13 +167,13 @@ const ManageSchools = () => {
                 </div>
             ) : (
                 <div className={styles.schoolsGrid}>
-                    {schools.length === 0 ? (
+                    {sortedSchools.length === 0 ? (
                         <div className={styles.emptyState}>
                             <p>Aucune école ajoutée pour le moment.</p>
                             {!isReadOnly && <button onClick={startAdd}>Commencer</button>}
                         </div>
                     ) : (
-                        schools.map(school => (
+                        sortedSchools.map(school => (
                             <div
                                 key={school.id}
                                 className={styles.schoolCard}
