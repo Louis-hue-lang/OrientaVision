@@ -97,14 +97,18 @@ const MyProfile = () => {
                         <ul className={styles.instructionList}>
                             <li>
                                 <span className={styles.bullet}>1</span>
-                                <span>Ajustez les curseurs selon vos priorités.</span>
+                                <span>Sélectionnez les critères qui vous importent grâce au menu déroulant.</span>
                             </li>
                             <li>
                                 <span className={styles.bullet}>2</span>
-                                <span>Ajoutez des écoles dans l'onglet "Écoles".</span>
+                                <span>Ajustez les curseurs correspondants selon vos priorités.</span>
                             </li>
                             <li>
                                 <span className={styles.bullet}>3</span>
+                                <span>Ajoutez des écoles dans l'onglet "Écoles".</span>
+                            </li>
+                            <li>
+                                <span className={styles.bullet}>4</span>
                                 <span>Comparez vos profils dans l'onglet "Comparer".</span>
                             </li>
                         </ul>
