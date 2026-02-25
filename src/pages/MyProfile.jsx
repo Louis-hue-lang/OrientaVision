@@ -105,10 +105,6 @@ const MyProfile = () => {
                             </li>
                             <li>
                                 <span className={styles.bullet}>3</span>
-                                <span>Ajoutez des écoles dans l'onglet "Écoles".</span>
-                            </li>
-                            <li>
-                                <span className={styles.bullet}>4</span>
                                 <span>Comparez vos profils dans l'onglet "Comparer".</span>
                             </li>
                         </ul>
