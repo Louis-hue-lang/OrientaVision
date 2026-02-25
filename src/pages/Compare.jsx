@@ -3,9 +3,30 @@ import { useApp } from '../context/AppContext';
 import CustomRadarChart from '../components/UI/RadarChart';
 import styles from './Compare.module.css';
 
+const PRESET_COLORS = [
+    '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981',
+    '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'
+];
+
 const Compare = () => {
     const { profile, schools, criteria, activeCriteria } = useApp();
     const [selectedSchoolIds, setSelectedSchoolIds] = useState([]);
+
+    const sortedSchools = useMemo(() => {
+        return [...schools].sort((a, b) => {
+            const colorIndexA = PRESET_COLORS.indexOf(a.color);
+            const colorIndexB = PRESET_COLORS.indexOf(b.color);
+
+            const indexA = colorIndexA !== -1 ? colorIndexA : PRESET_COLORS.length;
+            const indexB = colorIndexB !== -1 ? colorIndexB : PRESET_COLORS.length;
+
+            if (indexA !== indexB) {
+                return indexA - indexB;
+            }
+
+            return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
+        });
+    }, [schools]);
 
     const toggleSchool = (id) => {
         setSelectedSchoolIds(prev =>
@@ -36,7 +57,7 @@ const Compare = () => {
     }, [criteria, profile, schools, selectedSchoolIds, activeCriteria]);
 
     // key objects for the chart component to know which radars to render
-    const schoolKeys = schools
+    const schoolKeys = sortedSchools
         .filter(s => selectedSchoolIds.includes(s.id))
         .map(s => ({ id: s.id, name: s.name }));
 
@@ -52,11 +73,11 @@ const Compare = () => {
                 <div className={styles.sidebar}>
                     <div className="card">
                         <h3 className={styles.sectionTitle}>Écoles à comparer</h3>
-                        {schools.length === 0 ? (
+                        {sortedSchools.length === 0 ? (
                             <p className={styles.emptyText}>Ajoutez des écoles dans l'onglet "Écoles" pour les voir ici.</p>
                         ) : (
                             <div className={styles.schoolList}>
-                                {schools.map(school => (
+                                {sortedSchools.map(school => (
                                     <label key={school.id} className={styles.schoolCheckbox}>
                                         <input
                                             type="checkbox"
